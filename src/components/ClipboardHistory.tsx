@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2 } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { HistorySkeleton } from "./HistorySkeleton";
+import { Editor } from "@monaco-editor/react";
+import { useTheme } from "next-themes";
 
 interface ClipboardItem {
   id: string;
-  content_type: "text" | "file";
+  content_type: "text" | "file" | "code";
   content?: string;
   file_name?: string;
   file_url?: string;
   device_name?: string;
+  language?: string;
   created_at: string;
 }
 
@@ -25,6 +28,8 @@ interface ClipboardHistoryProps {
 export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadHistory();
@@ -186,6 +191,54 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                               </div>
                               <p className="text-sm break-words line-clamp-3 leading-relaxed">{item.content}</p>
                             </>
+                          ) : item.content_type === "code" ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-3">
+                                <motion.div 
+                                  className="p-2 rounded-xl bg-primary/10"
+                                  whileHover={{ rotate: 360 }}
+                                  transition={{ duration: 0.6 }}
+                                >
+                                  <Code2 className="h-4 w-4 text-primary flex-shrink-0" />
+                                </motion.div>
+                                <div className="flex items-center gap-2 flex-1">
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {item.device_name || "Unknown device"}
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">
+                                    {item.language || "plaintext"}
+                                  </span>
+                                </div>
+                              </div>
+                              {expandedCode === item.id ? (
+                                <div className="rounded-2xl overflow-hidden border border-border mt-2">
+                                  <Editor
+                                    height="200px"
+                                    language={item.language || "plaintext"}
+                                    value={item.content || ""}
+                                    theme={theme === "dark" ? "vs-dark" : "light"}
+                                    options={{
+                                      readOnly: true,
+                                      minimap: { enabled: false },
+                                      fontSize: 12,
+                                      lineNumbers: "on",
+                                      scrollBeyondLastLine: false,
+                                      automaticLayout: true,
+                                      wordWrap: "on",
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <motion.button
+                                  onClick={() => setExpandedCode(item.id)}
+                                  className="text-sm text-left w-full p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2"
+                                  whileHover={{ scale: 1.01 }}
+                                  whileTap={{ scale: 0.99 }}
+                                >
+                                  {item.content}
+                                </motion.button>
+                              )}
+                            </>
                           ) : (
                             <>
                               <div className="flex items-center gap-2 mb-3">
@@ -209,17 +262,31 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                         </div>
 
                         <div className="flex gap-2 flex-shrink-0">
-                          {item.content_type === "text" ? (
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => copyText(item.content!)}
-                                className="rounded-2xl"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </motion.div>
+                          {(item.content_type === "text" || item.content_type === "code") ? (
+                            <>
+                              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => copyText(item.content!)}
+                                  className="rounded-2xl"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </motion.div>
+                              {item.content_type === "code" && expandedCode === item.id && (
+                                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setExpandedCode(null)}
+                                    className="rounded-2xl"
+                                  >
+                                    <Code2 className="h-4 w-4" />
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </>
                           ) : (
                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                               <Button

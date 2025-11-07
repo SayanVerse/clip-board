@@ -23,6 +23,7 @@ export type Database = {
           file_name: string | null
           file_url: string | null
           id: string
+          language: string | null
           session_id: string
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
+          language?: string | null
           session_id: string
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
+          language?: string | null
           session_id?: string
         }
         Relationships: [
