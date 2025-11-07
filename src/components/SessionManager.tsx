@@ -94,19 +94,26 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
   if (sessionId) {
   return (
-    <Card className="p-6 glass rounded-3xl shadow-elevated">
+    <Card className="p-6 glass rounded-3xl shadow-elevated animate-scale-in">
       <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Session Code</h3>
-            <p className="text-3xl font-bold text-primary tracking-wider">{sessionCode}</p>
+            <p className="text-4xl font-bold text-primary tracking-wider animate-bounce-in">{sessionCode}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={leaveSession}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={leaveSession}
+            className="hover:scale-110 transition-transform rounded-2xl"
+          >
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
         {qrDataUrl && (
-          <div className="mt-4 flex justify-center">
-            <img src={qrDataUrl} alt="Session QR Code" className="rounded-lg border-2 border-border" />
+          <div className="mt-6 flex justify-center animate-fade-in">
+            <div className="p-4 glass rounded-3xl">
+              <img src={qrDataUrl} alt="Session QR Code" className="rounded-2xl" />
+            </div>
           </div>
         )}
         <p className="text-xs text-muted-foreground text-center mt-4">
@@ -117,44 +124,45 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   }
 
   return (
-    <Card className="p-6 glass rounded-3xl shadow-elevated">
-      <div className="space-y-4">
+    <Card className="p-8 glass rounded-3xl shadow-elevated animate-scale-in">
+      <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Create New Session</h3>
+          <h3 className="text-xl font-semibold mb-3">Create New Session</h3>
           <Button 
             onClick={createSession} 
             disabled={isLoading}
-            className="w-full"
+            className="w-full rounded-2xl h-12 hover:scale-[1.02] transition-all duration-300 shadow-lg"
           >
-            <QrCode className="mr-2 h-4 w-4" />
+            <QrCode className="mr-2 h-5 w-5" />
             Generate Session Code
           </Button>
         </div>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+            <span className="w-full border-t-2 border-border/50" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or</span>
+          <div className="relative flex justify-center text-sm uppercase font-medium">
+            <span className="glass px-4 py-1 rounded-full text-muted-foreground">Or</span>
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-2">Join Existing Session</h3>
-          <div className="flex gap-2">
+          <h3 className="text-xl font-semibold mb-3">Join Existing Session</h3>
+          <div className="flex gap-3">
             <Input
-              placeholder="Enter 6-digit code"
+              placeholder="000000"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               maxLength={6}
-              className="text-center text-lg tracking-widest"
+              className="text-center text-2xl tracking-widest font-bold rounded-2xl h-12 glass-hover border-2"
             />
             <Button 
               onClick={joinSession} 
               disabled={isLoading || joinCode.length !== 6}
+              className="rounded-2xl h-12 px-6 hover:scale-[1.02] transition-all duration-300"
             >
-              <Link2 className="mr-2 h-4 w-4" />
+              <Link2 className="mr-2 h-5 w-5" />
               Join
             </Button>
           </div>

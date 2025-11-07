@@ -51,20 +51,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto px-4 py-8">
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-6 right-6 animate-fade-in">
           <ThemeToggle />
         </div>
         
-        <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-primary rounded-2xl shadow-elevated">
-              <Clipboard className="h-8 w-8 text-primary-foreground" />
+        <header className="text-center mb-16 animate-slide-up">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="p-4 bg-gradient-primary rounded-3xl shadow-elevated animate-bounce-in">
+              <Clipboard className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-primary bg-clip-text text-transparent">
             CopyPaste Server
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl font-medium">
             Share clipboard across devices instantly
           </p>
         </header>
@@ -85,23 +85,23 @@ const Index = () => {
         </div>
 
         {!sessionId && (
-          <div className="mt-12 text-center space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
-              <h3 className="font-semibold text-accent-foreground mb-2">🔒 Secure</h3>
-                <p className="text-muted-foreground">
+          <div className="mt-16 text-center space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
+              <h3 className="text-2xl font-bold text-accent-foreground mb-3">🔒 Secure</h3>
+                <p className="text-muted-foreground font-medium">
                   Sessions expire after 24h of inactivity
                 </p>
               </div>
-            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
-              <h3 className="font-semibold text-accent-foreground mb-2">⚡ Fast</h3>
-                <p className="text-muted-foreground">
+            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
+              <h3 className="text-2xl font-bold text-accent-foreground mb-3">⚡ Fast</h3>
+                <p className="text-muted-foreground font-medium">
                   Real-time sync across all devices
                 </p>
               </div>
-            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
-              <h3 className="font-semibold text-accent-foreground mb-2">📱 Universal</h3>
-                <p className="text-muted-foreground">
+            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
+              <h3 className="text-2xl font-bold text-accent-foreground mb-3">📱 Universal</h3>
+                <p className="text-muted-foreground font-medium">
                   Works on mobile, tablet, and desktop
                 </p>
               </div>

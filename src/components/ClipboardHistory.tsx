@@ -120,11 +120,16 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   }
 
   return (
-    <Card className="p-6 glass rounded-3xl shadow-elevated">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Clipboard History</h3>
+    <Card className="p-6 glass rounded-3xl shadow-elevated animate-slide-up">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold">Clipboard History</h3>
         {items.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearAll}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearAll}
+            className="rounded-2xl hover:scale-105 transition-transform"
+          >
             Clear All
           </Button>
         )}
@@ -137,42 +142,51 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
           </p>
         ) : (
           <div className="space-y-3">
-            {items.map((item) => (
-              <Card key={item.id} className="p-4 bg-background/50 hover:shadow-elevated transition-all rounded-2xl">
+            {items.map((item, index) => (
+              <Card 
+                key={item.id} 
+                className="p-5 glass-hover rounded-3xl transition-all duration-300 hover:scale-[1.01] animate-fade-in"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     {item.content_type === "text" ? (
                       <>
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="p-2 rounded-xl bg-primary/10">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">
                             {item.device_name || "Unknown device"}
                           </span>
                         </div>
-                        <p className="text-sm break-words line-clamp-3">{item.content}</p>
+                        <p className="text-sm break-words line-clamp-3 leading-relaxed">{item.content}</p>
                       </>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Download className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="p-2 rounded-xl bg-primary/10">
+                            <Download className="h-4 w-4 text-primary flex-shrink-0" />
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">
                             {item.device_name || "Unknown device"}
                           </span>
                         </div>
-                        <p className="text-sm font-medium truncate">{item.file_name}</p>
+                        <p className="text-sm font-semibold truncate">{item.file_name}</p>
                       </>
                     )}
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground/70 mt-3 font-medium">
                       {new Date(item.created_at).toLocaleString()}
                     </p>
                   </div>
 
-                  <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex gap-2 flex-shrink-0">
                     {item.content_type === "text" ? (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => copyText(item.content!)}
+                        className="rounded-2xl hover:scale-110 transition-transform"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -181,6 +195,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                         variant="ghost"
                         size="icon"
                         onClick={() => window.open(item.file_url, "_blank")}
+                        className="rounded-2xl hover:scale-110 transition-transform"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -189,6 +204,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => deleteItem(item.id)}
+                      className="rounded-2xl hover:scale-110 transition-transform hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
