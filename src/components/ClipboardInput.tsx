@@ -74,13 +74,21 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
 
     setIsSending(true);
     try {
-      const filePath = `${sessionId}/${Date.now()}_${file.name}`;
+      const timestamp = Date.now();
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${sessionId}/${timestamp}_${sanitizedFileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("clipboard-files")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from("clipboard-files")
@@ -96,7 +104,10 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
           device_name: deviceName,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
 
       toast.success("File sent!");
       
@@ -104,9 +115,9 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
         .from("sessions")
         .update({ last_activity: new Date().toISOString() })
         .eq("id", sessionId);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
-      toast.error("Failed to upload file");
+      toast.error(error.message || "Failed to upload file");
     } finally {
       setIsSending(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

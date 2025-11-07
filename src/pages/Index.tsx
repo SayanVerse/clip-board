@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { SessionManager } from "@/components/SessionManager";
 import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Clipboard } from "lucide-react";
 
 const getDeviceName = () => {
@@ -50,9 +51,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto px-4 py-8">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
+        
         <header className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-primary rounded-xl shadow-elevated">
+            <div className="p-3 bg-gradient-primary rounded-2xl shadow-elevated">
               <Clipboard className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
@@ -82,20 +87,20 @@ const Index = () => {
         {!sessionId && (
           <div className="mt-12 text-center space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 rounded-lg bg-accent">
-                <h3 className="font-semibold text-accent-foreground mb-2">🔒 Secure</h3>
+            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
+              <h3 className="font-semibold text-accent-foreground mb-2">🔒 Secure</h3>
                 <p className="text-muted-foreground">
                   Sessions expire after 24h of inactivity
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-accent">
-                <h3 className="font-semibold text-accent-foreground mb-2">⚡ Fast</h3>
+            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
+              <h3 className="font-semibold text-accent-foreground mb-2">⚡ Fast</h3>
                 <p className="text-muted-foreground">
                   Real-time sync across all devices
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-accent">
-                <h3 className="font-semibold text-accent-foreground mb-2">📱 Universal</h3>
+            <div className="p-6 rounded-3xl bg-accent/50 backdrop-blur-sm">
+              <h3 className="font-semibold text-accent-foreground mb-2">📱 Universal</h3>
                 <p className="text-muted-foreground">
                   Works on mobile, tablet, and desktop
                 </p>

@@ -93,9 +93,9 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   };
 
   if (sessionId) {
-    return (
-      <Card className="p-6 bg-gradient-card shadow-card">
-        <div className="flex items-center justify-between mb-4">
+  return (
+    <Card className="p-6 glass rounded-3xl shadow-elevated">
+      <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Session Code</h3>
             <p className="text-3xl font-bold text-primary tracking-wider">{sessionCode}</p>
@@ -117,7 +117,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   }
 
   return (
-    <Card className="p-6 bg-gradient-card shadow-card">
+    <Card className="p-6 glass rounded-3xl shadow-elevated">
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold mb-2">Create New Session</h3>

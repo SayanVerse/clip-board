@@ -112,15 +112,15 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   };
 
   if (isLoading) {
-    return (
-      <Card className="p-6 bg-gradient-card shadow-card">
+  return (
+    <Card className="p-6 glass rounded-3xl shadow-elevated">
         <p className="text-center text-muted-foreground">Loading history...</p>
       </Card>
     );
   }
 
   return (
-    <Card className="p-6 bg-gradient-card shadow-card">
+    <Card className="p-6 glass rounded-3xl shadow-elevated">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Clipboard History</h3>
         {items.length > 0 && (
@@ -138,7 +138,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
         ) : (
           <div className="space-y-3">
             {items.map((item) => (
-              <Card key={item.id} className="p-4 bg-background hover:shadow-card transition-shadow">
+              <Card key={item.id} className="p-4 bg-background/50 hover:shadow-elevated transition-all rounded-2xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     {item.content_type === "text" ? (
