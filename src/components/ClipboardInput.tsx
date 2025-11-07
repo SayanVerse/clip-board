@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Upload, Copy, FileUp } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 
 interface ClipboardInputProps {
   sessionId: string;
@@ -113,6 +115,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       }
 
       toast.success("File sent!");
+      triggerConfetti();
       
       await supabase
         .from("sessions")
@@ -159,6 +162,49 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
     if (file) {
       await processFile(file);
     }
+  };
+
+  const triggerConfetti = () => {
+    const count = 100;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999,
+    };
+
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    }
+
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    });
+
+    fire(0.2, {
+      spread: 60,
+    });
+
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8,
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2,
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    });
   };
 
   const processFile = async (file: File) => {
@@ -219,7 +265,12 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
   };
 
   return (
-    <div className="space-y-3 animate-fade-in">
+    <motion.div 
+      className="space-y-3"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+    >
       <div
         ref={dropZoneRef}
         onDragOver={handleDragOver}
@@ -230,15 +281,34 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
           isDragging && "ring-4 ring-primary/50 scale-[1.02]"
         )}
       >
-        {isDragging && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl glass animate-bounce-in">
-            <div className="text-center p-8">
-              <FileUp className="h-16 w-16 text-primary mx-auto mb-4 animate-bounce" />
-              <p className="text-xl font-semibold text-primary">Drop file here</p>
-              <p className="text-sm text-muted-foreground mt-2">Up to 20MB</p>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {isDragging && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl glass"
+            >
+              <div className="text-center p-8">
+                <motion.div
+                  animate={{ 
+                    y: [0, -10, 0],
+                  }}
+                  transition={{ 
+                    repeat: Infinity, 
+                    duration: 1.5,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <FileUp className="h-16 w-16 text-primary mx-auto mb-4" />
+                </motion.div>
+                <p className="text-xl font-semibold text-primary">Drop file here</p>
+                <p className="text-sm text-muted-foreground mt-2">Up to 20MB</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <div className="relative">
           <Textarea
@@ -249,37 +319,56 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
             className="min-h-[140px] resize-none pr-12 glass-hover border-2 transition-all duration-300 rounded-3xl"
           />
           {text && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-3 right-3 hover:scale-110 transition-transform"
-              onClick={copyToClipboard}
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              <Copy className="h-4 w-4" />
-            </Button>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-3 right-3 rounded-2xl"
+                  onClick={copyToClipboard}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </motion.div>
           )}
         </div>
       </div>
       
       <div className="flex gap-3">
-        <Button
-          onClick={() => sendText()}
-          disabled={!text.trim() || isSending}
-          className="flex-1 rounded-2xl hover:scale-[1.02] transition-all duration-300 shadow-lg"
+        <motion.div 
+          className="flex-1"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <Send className="mr-2 h-4 w-4" />
-          Send Text
-        </Button>
+          <Button
+            onClick={() => sendText()}
+            disabled={!text.trim() || isSending}
+            className="w-full rounded-2xl h-12 shadow-lg"
+          >
+            <Send className="mr-2 h-4 w-4" />
+            Send Text
+          </Button>
+        </motion.div>
         
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isSending}
-          variant="secondary"
-          className="rounded-2xl hover:scale-[1.02] transition-all duration-300"
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <Upload className="mr-2 h-4 w-4" />
-          Send File
-        </Button>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending}
+            variant="secondary"
+            className="rounded-2xl h-12 px-6"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Send File
+          </Button>
+        </motion.div>
         
         <input
           ref={fileInputRef}
@@ -292,6 +381,6 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
           }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 };

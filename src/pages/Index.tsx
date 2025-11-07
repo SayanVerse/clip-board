@@ -4,6 +4,7 @@ import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Clipboard } from "lucide-react";
+import { motion } from "framer-motion";
 
 const getDeviceName = () => {
   const userAgent = navigator.userAgent;
@@ -51,22 +52,46 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto px-4 py-8">
-        <div className="absolute top-6 right-6 animate-fade-in">
+        <motion.div 
+          className="absolute top-6 right-6"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <ThemeToggle />
-        </div>
+        </motion.div>
         
-        <header className="text-center mb-16 animate-slide-up">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="p-4 bg-gradient-primary rounded-3xl shadow-elevated animate-bounce-in">
+        <header className="text-center mb-16">
+          <motion.div 
+            className="flex items-center justify-center gap-3 mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+          >
+            <motion.div 
+              className="p-4 bg-gradient-primary rounded-3xl shadow-elevated"
+              whileHover={{ scale: 1.1, rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
               <Clipboard className="h-10 w-10 text-primary-foreground" />
-            </div>
-          </div>
-          <h1 className="text-5xl font-bold mb-3 bg-gradient-primary bg-clip-text text-transparent">
+            </motion.div>
+          </motion.div>
+          <motion.h1 
+            className="text-5xl font-bold mb-3 bg-gradient-primary bg-clip-text text-transparent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             CopyPaste Server
-          </h1>
-          <p className="text-muted-foreground text-xl font-medium">
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground text-xl font-medium"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
             Share clipboard across devices instantly
-          </p>
+          </motion.p>
         </header>
 
         <div className="space-y-6">
@@ -85,28 +110,45 @@ const Index = () => {
         </div>
 
         {!sessionId && (
-          <div className="mt-16 text-center space-y-6 animate-fade-in">
+          <motion.div 
+            className="mt-16 text-center space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
-              <h3 className="text-2xl font-bold text-accent-foreground mb-3">🔒 Secure</h3>
-                <p className="text-muted-foreground font-medium">
-                  Sessions expire after 24h of inactivity
-                </p>
-              </div>
-            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
-              <h3 className="text-2xl font-bold text-accent-foreground mb-3">⚡ Fast</h3>
-                <p className="text-muted-foreground font-medium">
-                  Real-time sync across all devices
-                </p>
-              </div>
-            <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
-              <h3 className="text-2xl font-bold text-accent-foreground mb-3">📱 Universal</h3>
-                <p className="text-muted-foreground font-medium">
-                  Works on mobile, tablet, and desktop
-                </p>
-              </div>
+              {[
+                { icon: "🔒", title: "Secure", desc: "Sessions expire after 24h of inactivity" },
+                { icon: "⚡", title: "Fast", desc: "Real-time sync across all devices" },
+                { icon: "📱", title: "Universal", desc: "Works on mobile, tablet, and desktop" }
+              ].map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: 0.8 + index * 0.1,
+                    type: "spring",
+                    stiffness: 100
+                  }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <div className="p-8 rounded-3xl glass-hover transition-all duration-300">
+                    <h3 className="text-2xl font-bold text-accent-foreground mb-3">
+                      {feature.icon} {feature.title}
+                    </h3>
+                    <p className="text-muted-foreground font-medium">
+                      {feature.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

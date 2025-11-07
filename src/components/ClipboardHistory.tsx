@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Download, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
+import { HistorySkeleton } from "./HistorySkeleton";
 
 interface ClipboardItem {
   id: string;
@@ -112,109 +114,144 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   };
 
   if (isLoading) {
-  return (
-    <Card className="p-6 glass rounded-3xl shadow-elevated">
-        <p className="text-center text-muted-foreground">Loading history...</p>
-      </Card>
-    );
+    return <HistorySkeleton />;
   }
 
   return (
-    <Card className="p-6 glass rounded-3xl shadow-elevated animate-slide-up">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold">Clipboard History</h3>
-        {items.length > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={clearAll}
-            className="rounded-2xl hover:scale-105 transition-transform"
-          >
-            Clear All
-          </Button>
-        )}
-      </div>
-
-      <ScrollArea className="h-[400px] pr-4">
-        {items.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">
-            No clipboard items yet. Start by sending text or files!
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item, index) => (
-              <Card 
-                key={item.id} 
-                className="p-5 glass-hover rounded-3xl transition-all duration-300 hover:scale-[1.01] animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      <Card className="p-6 glass rounded-3xl shadow-elevated">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold">Clipboard History</h3>
+          {items.length > 0 && (
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearAll}
+                className="rounded-2xl"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    {item.content_type === "text" ? (
-                      <>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-2 rounded-xl bg-primary/10">
-                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                          </div>
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {item.device_name || "Unknown device"}
-                          </span>
-                        </div>
-                        <p className="text-sm break-words line-clamp-3 leading-relaxed">{item.content}</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-2 rounded-xl bg-primary/10">
-                            <Download className="h-4 w-4 text-primary flex-shrink-0" />
-                          </div>
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {item.device_name || "Unknown device"}
-                          </span>
-                        </div>
-                        <p className="text-sm font-semibold truncate">{item.file_name}</p>
-                      </>
-                    )}
-                    <p className="text-xs text-muted-foreground/70 mt-3 font-medium">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
-                  </div>
+                Clear All
+              </Button>
+            </motion.div>
+          )}
+        </div>
 
-                  <div className="flex gap-2 flex-shrink-0">
-                    {item.content_type === "text" ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyText(item.content!)}
-                        className="rounded-2xl hover:scale-110 transition-transform"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => window.open(item.file_url, "_blank")}
-                        className="rounded-2xl hover:scale-110 transition-transform"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem(item.id)}
-                      className="rounded-2xl hover:scale-110 transition-transform hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </ScrollArea>
-    </Card>
+        <ScrollArea className="h-[400px] pr-4">
+          {items.length === 0 ? (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-muted-foreground py-8"
+            >
+              No clipboard items yet. Start by sending text or files!
+            </motion.p>
+          ) : (
+            <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {items.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                    transition={{
+                      duration: 0.4,
+                      delay: index * 0.05,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 20
+                    }}
+                    layout
+                  >
+                    <Card className="p-5 glass-hover rounded-3xl transition-all duration-300">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {item.content_type === "text" ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-3">
+                                <motion.div 
+                                  className="p-2 rounded-xl bg-primary/10"
+                                  whileHover={{ rotate: 360 }}
+                                  transition={{ duration: 0.6 }}
+                                >
+                                  <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                                </motion.div>
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {item.device_name || "Unknown device"}
+                                </span>
+                              </div>
+                              <p className="text-sm break-words line-clamp-3 leading-relaxed">{item.content}</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2 mb-3">
+                                <motion.div 
+                                  className="p-2 rounded-xl bg-primary/10"
+                                  whileHover={{ rotate: 360 }}
+                                  transition={{ duration: 0.6 }}
+                                >
+                                  <Download className="h-4 w-4 text-primary flex-shrink-0" />
+                                </motion.div>
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {item.device_name || "Unknown device"}
+                                </span>
+                              </div>
+                              <p className="text-sm font-semibold truncate">{item.file_name}</p>
+                            </>
+                          )}
+                          <p className="text-xs text-muted-foreground/70 mt-3 font-medium">
+                            {new Date(item.created_at).toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2 flex-shrink-0">
+                          {item.content_type === "text" ? (
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => copyText(item.content!)}
+                                className="rounded-2xl"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          ) : (
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => window.open(item.file_url, "_blank")}
+                                className="rounded-2xl"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          )}
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteItem(item.id)}
+                              className="rounded-2xl hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </ScrollArea>
+      </Card>
+    </motion.div>
   );
 };
