@@ -31,8 +31,29 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const { theme } = useTheme();
 
+  const fetchClipboardItems = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("clipboard_items")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setItems((data || []) as ClipboardItem[]);
+      toast.success("Refreshed!");
+    } catch (error) {
+      console.error("Error loading history:", error);
+      toast.error("Failed to load history");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadHistory();
+    fetchClipboardItems();
     subscribeToChanges();
   }, [sessionId]);
 
@@ -128,21 +149,35 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <Card className="p-6 glass rounded-3xl shadow-elevated">
+      <Card className="p-4 md:p-6 glass rounded-3xl shadow-elevated">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold">Clipboard History</h3>
-          {items.length > 0 && (
+          <h3 className="text-lg md:text-xl font-semibold">Clipboard History</h3>
+          <div className="flex items-center gap-2">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={clearAll}
-                className="rounded-2xl"
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchClipboardItems}
+                className="rounded-2xl gap-2"
+                disabled={isLoading}
               >
-                Clear All
+                <Download className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
             </motion.div>
-          )}
+            {items.length > 0 && (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearAll}
+                  className="rounded-2xl"
+                >
+                  Clear All
+                </Button>
+              </motion.div>
+            )}
+          </div>
         </div>
 
         <ScrollArea className="h-[400px] pr-4">
@@ -212,11 +247,11 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                               </div>
                               {expandedCode === item.id ? (
                                 <div className="rounded-2xl overflow-hidden border border-border mt-2">
-                                  <Editor
+                                   <Editor
                                     height="200px"
                                     language={item.language || "plaintext"}
                                     value={item.content || ""}
-                                    theme={theme === "dark" ? "vs-dark" : "light"}
+                                    theme={theme === "dark" ? "vs-dark" : "vs-light"}
                                     options={{
                                       readOnly: true,
                                       minimap: { enabled: false },
@@ -225,6 +260,8 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                                       scrollBeyondLastLine: false,
                                       automaticLayout: true,
                                       wordWrap: "on",
+                                      fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
+                                      fontLigatures: true,
                                     }}
                                   />
                                 </div>
