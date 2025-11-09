@@ -3,12 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QrCode, Link2, LogOut, Camera, X } from "lucide-react";
+import { QrCode, Link2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Scanner } from "@yudiel/react-qr-scanner";
 
 interface SessionManagerProps {
   sessionId: string | null;
@@ -20,7 +19,6 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   const [joinCode, setJoinCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     if (sessionCode) {
@@ -108,22 +106,6 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
     onSessionChange(null, null);
     setQrDataUrl(null);
     toast.info("Left session");
-  };
-
-  const handleScan = (result: string) => {
-    try {
-      const url = new URL(result);
-      const code = url.searchParams.get("code");
-      if (code && code.length === 6) {
-        setJoinCode(code);
-        setShowScanner(false);
-        toast.success("QR Code scanned! Click Join to continue.");
-      } else {
-        toast.error("Invalid QR code");
-      }
-    } catch {
-      toast.error("Invalid QR code format");
-    }
   };
 
   if (sessionId) {
@@ -218,75 +200,25 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
           <div>
             <h3 className="text-xl font-semibold mb-3">Join Existing Session</h3>
-            <div className="flex gap-2 md:gap-3">
+            <div className="flex gap-3">
               <Input
                 placeholder="000000"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 maxLength={6}
-                className="text-center text-xl md:text-2xl tracking-widest font-bold rounded-2xl h-12 glass-hover border-2 flex-1"
+                className="text-center text-2xl tracking-widest font-bold rounded-2xl h-12 glass-hover border-2"
               />
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  onClick={() => setShowScanner(!showScanner)}
-                  variant="outline"
-                  className="rounded-2xl h-12 w-12 p-0"
-                  title="Scan QR Code"
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-              </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button 
                   onClick={joinSession} 
                   disabled={isLoading || joinCode.length !== 6}
-                  className="rounded-2xl h-12 px-4 md:px-6"
+                  className="rounded-2xl h-12 px-6"
                 >
-                  <Link2 className="h-5 w-5 md:mr-2" />
-                  <span className="hidden md:inline">Join</span>
+                  <Link2 className="mr-2 h-5 w-5" />
+                  Join
                 </Button>
               </motion.div>
             </div>
-
-            <AnimatePresence>
-              {showScanner && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mt-4 overflow-hidden"
-                >
-                  <div className="relative rounded-3xl overflow-hidden border-2 border-border glass-hover">
-                    <Scanner
-                      onScan={(result) => {
-                        if (result && result[0]?.rawValue) {
-                          handleScan(result[0].rawValue);
-                        }
-                      }}
-                      onError={(error) => {
-                        console.error(error);
-                        toast.error("Camera access denied or unavailable");
-                      }}
-                      styles={{
-                        container: { height: "300px" },
-                      }}
-                    />
-                    <motion.button
-                      onClick={() => setShowScanner(false)}
-                      className="absolute top-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <X className="h-5 w-5" />
-                    </motion.button>
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    Point camera at QR code to scan
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </Card>

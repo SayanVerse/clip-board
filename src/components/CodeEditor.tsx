@@ -58,13 +58,13 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange }: Code
         </Select>
       </div>
 
-      <div className="rounded-3xl overflow-hidden border-2 border-border glass-hover bg-background">
+      <div className="rounded-3xl overflow-hidden border-2 border-border glass-hover">
         <Editor
           height="300px"
           language={language}
           value={value}
           onChange={(newValue) => onChange(newValue || "")}
-          theme={theme === "dark" ? "vs-dark" : "vs-light"}
+          theme={theme === "dark" ? "vs-dark" : "light"}
           options={{
             minimap: { enabled: false },
             fontSize: 14,
@@ -79,10 +79,6 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange }: Code
               vertical: "auto",
               horizontal: "auto",
             },
-            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
-            fontLigatures: true,
-            cursorBlinking: "smooth",
-            smoothScrolling: true,
           }}
         />
       </div>
