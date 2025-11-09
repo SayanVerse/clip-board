@@ -58,7 +58,7 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange }: Code
         </Select>
       </div>
 
-      <div className="rounded-3xl overflow-hidden border-2 border-border glass-hover">
+      <div className="rounded-3xl overflow-hidden border-2 border-border bg-card">
         <Editor
           height="300px"
           language={language}

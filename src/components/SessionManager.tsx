@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QrCode, Link2, LogOut } from "lucide-react";
+import { QrCode, Link2, LogOut, Camera } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { QRScanner } from "./QRScanner";
 
 interface SessionManagerProps {
   sessionId: string | null;
@@ -19,6 +20,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   const [joinCode, setJoinCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     if (sessionCode) {
@@ -200,7 +202,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
           <div>
             <h3 className="text-xl font-semibold mb-3">Join Existing Session</h3>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 placeholder="000000"
                 value={joinCode}
@@ -208,18 +210,40 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
                 maxLength={6}
                 className="text-center text-2xl tracking-widest font-bold rounded-2xl h-12 glass-hover border-2"
               />
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  onClick={joinSession} 
-                  disabled={isLoading || joinCode.length !== 6}
-                  className="rounded-2xl h-12 px-6"
-                >
-                  <Link2 className="mr-2 h-5 w-5" />
-                  Join
-                </Button>
-              </motion.div>
+              <div className="flex gap-3">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    onClick={() => setShowScanner(true)} 
+                    variant="outline"
+                    className="rounded-2xl h-12 px-6"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    Scan
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button 
+                    onClick={joinSession} 
+                    disabled={isLoading || joinCode.length !== 6}
+                    className="rounded-2xl h-12 px-6"
+                  >
+                    <Link2 className="mr-2 h-5 w-5" />
+                    Join
+                  </Button>
+                </motion.div>
+              </div>
             </div>
           </div>
+          
+          <QRScanner 
+            open={showScanner} 
+            onClose={() => setShowScanner(false)}
+            onScan={(code) => {
+              setJoinCode(code);
+              setShowScanner(false);
+              setTimeout(() => joinSession(), 300);
+            }}
+          />
         </div>
       </Card>
     </motion.div>

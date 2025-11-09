@@ -128,21 +128,34 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <Card className="p-6 glass rounded-3xl shadow-elevated">
-        <div className="flex items-center justify-between mb-6">
+      <Card className="p-4 md:p-6 glass rounded-3xl shadow-elevated">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <h3 className="text-xl font-semibold">Clipboard History</h3>
-          {items.length > 0 && (
+          <div className="flex gap-2">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
-                onClick={clearAll}
+                onClick={loadHistory}
                 className="rounded-2xl"
               >
-                Clear All
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                Refresh
               </Button>
             </motion.div>
-          )}
+            {items.length > 0 && (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearAll}
+                  className="rounded-2xl"
+                >
+                  Clear All
+                </Button>
+              </motion.div>
+            )}
+          </div>
         </div>
 
         <ScrollArea className="h-[400px] pr-4">
@@ -211,7 +224,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                                 </div>
                               </div>
                               {expandedCode === item.id ? (
-                                <div className="rounded-2xl overflow-hidden border border-border mt-2">
+                                <div className="rounded-2xl overflow-hidden border border-border mt-2 bg-card">
                                   <Editor
                                     height="200px"
                                     language={item.language || "plaintext"}
