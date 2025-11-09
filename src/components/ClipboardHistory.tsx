@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2 } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { HistorySkeleton } from "./HistorySkeleton";
 import { Editor } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ClipboardItem {
   id: string;
@@ -29,6 +30,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<ClipboardItem | null>(null);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -116,6 +118,23 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
       console.error("Error clearing:", error);
       toast.error("Failed to clear history");
     }
+  };
+
+  const isImage = (fileName?: string) => {
+    if (!fileName) return false;
+    const ext = fileName.toLowerCase().split('.').pop();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '');
+  };
+
+  const isPDF = (fileName?: string) => {
+    if (!fileName) return false;
+    return fileName.toLowerCase().endsWith('.pdf');
+  };
+
+  const getFileType = (fileName?: string) => {
+    if (isImage(fileName)) return 'image';
+    if (isPDF(fileName)) return 'pdf';
+    return 'other';
   };
 
   if (isLoading) {
@@ -266,7 +285,36 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                                   {item.device_name || "Unknown device"}
                                 </span>
                               </div>
-                              <p className="text-sm font-semibold truncate">{item.file_name}</p>
+                              <p className="text-sm font-semibold truncate mb-3">{item.file_name}</p>
+                              
+                              {getFileType(item.file_name) === 'image' && (
+                                <motion.div 
+                                  className="relative rounded-2xl overflow-hidden cursor-pointer group"
+                                  whileHover={{ scale: 1.02 }}
+                                  onClick={() => setPreviewFile(item)}
+                                >
+                                  <img 
+                                    src={item.file_url} 
+                                    alt={item.file_name} 
+                                    className="w-full h-48 object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Maximize2 className="h-8 w-8 text-white" />
+                                  </div>
+                                </motion.div>
+                              )}
+                              
+                              {getFileType(item.file_name) === 'pdf' && (
+                                <motion.button
+                                  onClick={() => setPreviewFile(item)}
+                                  className="w-full p-4 rounded-2xl bg-muted/50 hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                                  whileHover={{ scale: 1.01 }}
+                                  whileTap={{ scale: 0.99 }}
+                                >
+                                  <FileText className="h-5 w-5" />
+                                  <span className="text-sm font-medium">Preview PDF</span>
+                                </motion.button>
+                              )}
                             </>
                           )}
                           <p className="text-xs text-muted-foreground/70 mt-3 font-medium">
@@ -332,6 +380,39 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
           )}
         </ScrollArea>
       </Card>
+
+      <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <div className="relative h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-10 rounded-full bg-background/80 backdrop-blur"
+              onClick={() => setPreviewFile(null)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            
+            {previewFile && (
+              <div className="w-full h-full overflow-auto p-4">
+                {getFileType(previewFile.file_name) === 'image' ? (
+                  <img 
+                    src={previewFile.file_url} 
+                    alt={previewFile.file_name}
+                    className="w-full h-auto rounded-2xl"
+                  />
+                ) : getFileType(previewFile.file_name) === 'pdf' ? (
+                  <iframe
+                    src={previewFile.file_url}
+                    className="w-full h-[80vh] rounded-2xl"
+                    title={previewFile.file_name}
+                  />
+                ) : null}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
