@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SessionManager } from "@/components/SessionManager";
 import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
@@ -20,6 +20,21 @@ const Index = () => {
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [deviceName] = useState(getDeviceName());
 
+  const handleSessionChange = useCallback((newSessionId: string | null, newSessionCode: string | null) => {
+    setSessionId(newSessionId);
+    setSessionCode(newSessionCode);
+    
+    if (newSessionId && newSessionCode) {
+      localStorage.setItem("clipboard_session_id", newSessionId);
+      localStorage.setItem("clipboard_session_code", newSessionCode);
+      localStorage.setItem("clipboard_session_start", Date.now().toString());
+    } else {
+      localStorage.removeItem("clipboard_session_id");
+      localStorage.removeItem("clipboard_session_code");
+      localStorage.removeItem("clipboard_session_start");
+    }
+  }, []);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const codeParam = urlParams.get("code");
@@ -30,36 +45,57 @@ const Index = () => {
     
     const storedSessionId = localStorage.getItem("clipboard_session_id");
     const storedSessionCode = localStorage.getItem("clipboard_session_code");
+    const sessionStartTime = localStorage.getItem("clipboard_session_start");
     
-    if (storedSessionId && storedSessionCode) {
-      setSessionId(storedSessionId);
-      setSessionCode(storedSessionCode);
-    }
-
-    // Auto-exit session on window close
-    const handleBeforeUnload = () => {
-      if (sessionId) {
+    // Check if session expired (1 hour = 3600000ms)
+    if (storedSessionId && storedSessionCode && sessionStartTime) {
+      const timeElapsed = Date.now() - parseInt(sessionStartTime);
+      if (timeElapsed < 3600000) {
+        setSessionId(storedSessionId);
+        setSessionCode(storedSessionCode);
+      } else {
+        // Session expired, clear storage
         localStorage.removeItem("clipboard_session_id");
         localStorage.removeItem("clipboard_session_code");
+        localStorage.removeItem("clipboard_session_start");
       }
+    }
+
+    // Auto-exit session on window close/refresh
+    const handleBeforeUnload = () => {
+      localStorage.removeItem("clipboard_session_id");
+      localStorage.removeItem("clipboard_session_code");
+      localStorage.removeItem("clipboard_session_start");
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [sessionId]);
+  }, []);
 
-  const handleSessionChange = (newSessionId: string | null, newSessionCode: string | null) => {
-    setSessionId(newSessionId);
-    setSessionCode(newSessionCode);
-    
-    if (newSessionId && newSessionCode) {
-      localStorage.setItem("clipboard_session_id", newSessionId);
-      localStorage.setItem("clipboard_session_code", newSessionCode);
-    } else {
-      localStorage.removeItem("clipboard_session_id");
-      localStorage.removeItem("clipboard_session_code");
+  // Auto-exit after 1 hour
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const sessionStartTime = localStorage.getItem("clipboard_session_start");
+    if (!sessionStartTime) {
+      localStorage.setItem("clipboard_session_start", Date.now().toString());
     }
-  };
+
+    // Check every minute if session has expired
+    const checkInterval = setInterval(() => {
+      const startTime = localStorage.getItem("clipboard_session_start");
+      if (startTime) {
+        const timeElapsed = Date.now() - parseInt(startTime);
+        if (timeElapsed >= 3600000) {
+          // 1 hour passed, exit session
+          handleSessionChange(null, null);
+          localStorage.removeItem("clipboard_session_start");
+        }
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkInterval);
+  }, [sessionId, handleSessionChange]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">

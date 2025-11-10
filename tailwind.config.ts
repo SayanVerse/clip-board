@@ -61,7 +61,7 @@ export default {
         'smooth': 'var(--transition-smooth)',
       },
       fontFamily: {
-        'baloo': ['"Baloo Bhai 2"', 'cursive'],
+        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
