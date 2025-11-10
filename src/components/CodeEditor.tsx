@@ -8,6 +8,7 @@ interface CodeEditorProps {
   onChange: (value: string) => void;
   language: string;
   onLanguageChange: (language: string) => void;
+  onSend?: () => void;
 }
 
 const LANGUAGES = [
@@ -32,7 +33,7 @@ const LANGUAGES = [
   { value: "plaintext", label: "Plain Text" },
 ];
 
-export const CodeEditor = ({ value, onChange, language, onLanguageChange }: CodeEditorProps) => {
+export const CodeEditor = ({ value, onChange, language, onLanguageChange, onSend }: CodeEditorProps) => {
   const { theme } = useTheme();
 
   return (
@@ -64,6 +65,16 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange }: Code
           language={language}
           value={value}
           onChange={(newValue) => onChange(newValue || "")}
+          onMount={(editor, monaco) => {
+            editor.addCommand(
+              monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+              () => {
+                if (onSend) {
+                  onSend();
+                }
+              }
+            );
+          }}
           theme={theme === "dark" ? "vs-dark" : "light"}
           options={{
             minimap: { enabled: false },

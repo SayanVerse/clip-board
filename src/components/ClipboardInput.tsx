@@ -313,9 +313,15 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
             <div className="relative">
               <Textarea
                 ref={textareaRef}
-                placeholder="Type or paste text... (Ctrl+V to auto-paste & send)"
+                placeholder="Type or paste text... (Ctrl+V to auto-paste & send, Enter to send)"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendText();
+                  }
+                }}
                 className="min-h-[140px] resize-none pr-12 glass-hover border-2 transition-all duration-300 rounded-3xl"
               />
               {text && (
@@ -346,6 +352,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
             onChange={setCode}
             language={language}
             onLanguageChange={setLanguage}
+            onSend={sendCode}
           />
         </TabsContent>
       </Tabs>
@@ -413,7 +420,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       </div>
 
       <p className="text-xs text-center text-muted-foreground/70">
-        💡 Tip: Press <kbd className="px-2 py-0.5 rounded bg-muted text-xs">Ctrl+V</kbd> to auto-paste & send • <kbd className="px-2 py-0.5 rounded bg-muted text-xs">Esc</kbd> to clear
+        💡 Tip: Press <kbd className="px-2 py-0.5 rounded bg-muted text-xs">{mode === "code" ? "Ctrl+Enter" : "Enter"}</kbd> to send • <kbd className="px-2 py-0.5 rounded bg-muted text-xs">{mode === "code" ? "Enter" : "Shift+Enter"}</kbd> for new line • <kbd className="px-2 py-0.5 rounded bg-muted text-xs">Esc</kbd> to clear
       </p>
     </motion.div>
   );

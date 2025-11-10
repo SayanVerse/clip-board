@@ -204,7 +204,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                     }}
                     layout
                   >
-                    <Card className="p-5 glass-hover rounded-3xl transition-all duration-300">
+                    <Card className="p-5 glass-hover rounded-3xl transition-all duration-300 shadow-md hover:shadow-lg border-border/50">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           {item.content_type === "text" ? (
