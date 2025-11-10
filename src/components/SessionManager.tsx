@@ -63,8 +63,9 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
     }
   };
 
-  const joinSession = async () => {
-    if (!joinCode || joinCode.length !== 6) {
+  const joinSession = async (codeToJoin?: string) => {
+    const code = codeToJoin || joinCode;
+    if (!code || code.length !== 6) {
       toast.error("Please enter a valid 6-digit code");
       return;
     }
@@ -74,7 +75,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
       const { data: session, error } = await supabase
         .from("sessions")
         .select()
-        .eq("session_code", joinCode)
+        .eq("session_code", code)
         .single();
 
       if (error || !session) {
@@ -223,7 +224,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
-                    onClick={joinSession} 
+                    onClick={() => joinSession()} 
                     disabled={isLoading || joinCode.length !== 6}
                     className="rounded-2xl h-12 px-6"
                   >
@@ -239,9 +240,8 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
             open={showScanner} 
             onClose={() => setShowScanner(false)}
             onScan={(code) => {
-              setJoinCode(code);
               setShowScanner(false);
-              setTimeout(() => joinSession(), 300);
+              joinSession(code);
             }}
           />
         </div>
