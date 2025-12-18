@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QrCode, Link2, LogOut, Camera } from "lucide-react";
+import { QrCode, Link2, LogOut, Camera, Copy } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRScanner } from "./QRScanner";
+import { feedback } from "@/hooks/useFeedback";
 
 interface SessionManagerProps {
   sessionId: string | null;
@@ -24,7 +25,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   useEffect(() => {
     if (sessionCode) {
       const url = `${window.location.origin}?code=${sessionCode}`;
-      QRCode.toDataURL(url, { width: 180, margin: 2 })
+      QRCode.toDataURL(url, { width: 160, margin: 2 })
         .then(setQrDataUrl)
         .catch(console.error);
     }
@@ -47,9 +48,11 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
       onSessionChange(session.id, session.session_code);
       toast.success(`Session created: ${session.session_code}`);
+      feedback.success();
     } catch (error) {
       console.error("Error creating session:", error);
       toast.error("Failed to create session");
+      feedback.error();
     } finally {
       setIsLoading(false);
     }
@@ -72,19 +75,23 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
       if (error || !session) {
         toast.error("Invalid session code");
+        feedback.error();
         return;
       }
 
       if (new Date(session.expires_at) < new Date()) {
         toast.error("This session has expired");
+        feedback.error();
         return;
       }
 
       onSessionChange(session.id, session.session_code);
-      toast.success("Joined session successfully");
+      toast.success("Joined session");
+      feedback.success();
     } catch (error) {
       console.error("Error joining session:", error);
       toast.error("Failed to join session");
+      feedback.error();
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +103,17 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
     toast.info("Left session");
   };
 
+  const copyCode = async () => {
+    if (!sessionCode) return;
+    try {
+      await navigator.clipboard.writeText(sessionCode);
+      toast.success("Code copied");
+      feedback.copy();
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
+
   if (sessionId) {
     return (
       <motion.div
@@ -103,21 +121,31 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <Card className="p-6 border border-border">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="p-4 border border-border">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Session Code</p>
-              <p className="text-3xl font-mono font-bold tracking-widest text-primary">
-                {sessionCode}
-              </p>
+              <p className="text-xs text-muted-foreground mb-0.5">Session Code</p>
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-mono font-bold tracking-widest text-primary">
+                  {sessionCode}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={copyCode}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={leaveSession}
-              className="text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
           
@@ -127,17 +155,17 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex justify-center pt-4 border-t border-border"
+                className="flex justify-center pt-3 border-t border-border"
               >
-                <div className="p-3 bg-white rounded-lg">
-                  <img src={qrDataUrl} alt="Session QR Code" className="w-[140px] h-[140px]" />
+                <div className="p-2 bg-white rounded-lg">
+                  <img src={qrDataUrl} alt="QR Code" className="w-[120px] h-[120px]" />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
           
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            Share this code or scan QR to sync devices
+          <p className="text-[10px] text-muted-foreground text-center mt-3">
+            Share code or scan QR to sync
           </p>
         </Card>
       </motion.div>
@@ -150,17 +178,18 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="p-6 border border-border">
-        <div className="space-y-6">
+      <Card className="p-5 border border-border">
+        <div className="space-y-5">
           <div>
-            <h3 className="font-semibold mb-3">Create New Session</h3>
+            <h3 className="text-sm font-medium mb-2">Create Session</h3>
             <Button 
               onClick={createSession} 
               disabled={isLoading}
               className="w-full"
+              size="sm"
             >
               <QrCode className="mr-2 h-4 w-4" />
-              Generate Session Code
+              Generate Code
             </Button>
           </div>
 
@@ -168,40 +197,38 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
+            <div className="relative flex justify-center text-[10px] uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or join</span>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-3">Join Existing Session</h3>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-2">
               <Input
                 placeholder="000000"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 maxLength={6}
-                className="text-center text-xl tracking-[0.5em] font-mono"
+                className="text-center text-lg tracking-[0.4em] font-mono h-9"
               />
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setShowScanner(true)} 
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Scan
-                </Button>
-                <Button 
-                  onClick={() => joinSession()} 
-                  disabled={isLoading || joinCode.length !== 6}
-                  className="flex-1 sm:flex-none"
-                >
-                  <Link2 className="mr-2 h-4 w-4" />
-                  Join
-                </Button>
-              </div>
+              <Button 
+                onClick={() => setShowScanner(true)} 
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
             </div>
+            <Button 
+              onClick={() => joinSession()} 
+              disabled={isLoading || joinCode.length !== 6}
+              className="w-full mt-2"
+              size="sm"
+            >
+              <Link2 className="mr-2 h-4 w-4" />
+              Join Session
+            </Button>
           </div>
           
           <QRScanner 
