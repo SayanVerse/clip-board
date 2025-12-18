@@ -4,7 +4,7 @@ import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Footer } from "@/components/Footer";
-import { Clipboard } from "lucide-react";
+import { Clipboard, Shield, Zap, Monitor } from "lucide-react";
 import { motion } from "framer-motion";
 
 const getDeviceName = () => {
@@ -47,21 +47,18 @@ const Index = () => {
     const storedSessionCode = localStorage.getItem("clipboard_session_code");
     const sessionStartTime = localStorage.getItem("clipboard_session_start");
     
-    // Check if session expired (1 hour = 3600000ms)
     if (storedSessionId && storedSessionCode && sessionStartTime) {
       const timeElapsed = Date.now() - parseInt(sessionStartTime);
       if (timeElapsed < 3600000) {
         setSessionId(storedSessionId);
         setSessionCode(storedSessionCode);
       } else {
-        // Session expired, clear storage
         localStorage.removeItem("clipboard_session_id");
         localStorage.removeItem("clipboard_session_code");
         localStorage.removeItem("clipboard_session_start");
       }
     }
 
-    // Auto-exit session on window close/refresh
     const handleBeforeUnload = () => {
       localStorage.removeItem("clipboard_session_id");
       localStorage.removeItem("clipboard_session_code");
@@ -72,7 +69,6 @@ const Index = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  // Auto-exit after 1 hour
   useEffect(() => {
     if (!sessionId) return;
 
@@ -81,124 +77,54 @@ const Index = () => {
       localStorage.setItem("clipboard_session_start", Date.now().toString());
     }
 
-    // Check every minute if session has expired
     const checkInterval = setInterval(() => {
       const startTime = localStorage.getItem("clipboard_session_start");
       if (startTime) {
         const timeElapsed = Date.now() - parseInt(startTime);
         if (timeElapsed >= 3600000) {
-          // 1 hour passed, exit session
           handleSessionChange(null, null);
           localStorage.removeItem("clipboard_session_start");
         }
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(checkInterval);
   }, [sessionId, handleSessionChange]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-96 h-96 bg-primary-glow/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
-
-      <div className="container max-w-6xl mx-auto px-4 py-6 md:py-8 flex-1 relative z-10">
-        <motion.div 
-          className="absolute top-6 right-6"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="container max-w-4xl mx-auto px-4 py-8 md:py-12 flex-1">
+        <div className="absolute top-4 right-4 md:top-6 md:right-6">
           <ThemeToggle />
-        </motion.div>
+        </div>
         
-        <header className="text-center mb-8 md:mb-12">
+        <header className="text-center mb-10 md:mb-14">
           <motion.div 
-            className="flex items-center justify-center gap-4 mb-6"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, type: "spring", stiffness: 120 }}
+            className="inline-flex items-center justify-center p-3 bg-primary rounded-xl mb-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <motion.div
-                className="absolute inset-0 bg-gradient-primary rounded-3xl blur-xl opacity-50"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-              <div className="relative p-4 md:p-5 bg-gradient-primary rounded-3xl shadow-elevated">
-                <Clipboard className="h-10 w-10 md:h-12 md:w-12 text-primary-foreground" />
-              </div>
-            </motion.div>
+            <Clipboard className="h-8 w-8 text-primary-foreground" />
           </motion.div>
           
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          <motion.h1 
+            className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-3"
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-3 md:mb-4 bg-gradient-primary bg-clip-text text-transparent px-4">
-              CopyPaste Server
-            </h1>
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <motion.div
-                className="h-1 w-12 md:w-20 bg-gradient-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: ["0%", "100%"] }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              />
-              <motion.div
-                className="h-1 w-1 bg-primary rounded-full"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.6 }}
-              />
-              <motion.div
-                className="h-1 w-12 md:w-20 bg-gradient-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: ["0%", "100%"] }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              />
-            </div>
-            <p className="text-muted-foreground text-lg md:text-xl lg:text-2xl font-medium px-4 max-w-2xl mx-auto">
-              Share clipboard across devices instantly with real-time sync
-            </p>
-          </motion.div>
+            CopyPaste Server
+          </motion.h1>
+          
+          <motion.p 
+            className="text-muted-foreground text-base md:text-lg max-w-md mx-auto"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            Share clipboard content across devices with real-time sync
+          </motion.p>
         </header>
 
         <div className="space-y-6">
@@ -209,126 +135,80 @@ const Index = () => {
           />
 
           {sessionId && (
-            <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
               <ClipboardInput sessionId={sessionId} deviceName={deviceName} />
               <ClipboardHistory sessionId={sessionId} />
-            </>
+            </motion.div>
           )}
         </div>
 
         {!sessionId && (
           <motion.div 
-            className="mt-8 md:mt-12 space-y-8 md:space-y-12"
+            className="mt-16 md:mt-20"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
           >
-            {/* Feature Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { 
-                  icon: "🔒", 
+                  icon: Shield, 
                   title: "Secure", 
-                  desc: "Sessions expire after 24h of inactivity",
-                  color: "from-green-500/10 to-emerald-500/10"
+                  desc: "Sessions auto-expire after 24h of inactivity"
                 },
                 { 
-                  icon: "⚡", 
+                  icon: Zap, 
                   title: "Fast", 
-                  desc: "Real-time sync across all devices",
-                  color: "from-yellow-500/10 to-orange-500/10"
+                  desc: "Real-time sync across all your devices"
                 },
                 { 
-                  icon: "📱", 
+                  icon: Monitor, 
                   title: "Universal", 
-                  desc: "Works on mobile, tablet, and desktop",
-                  color: "from-blue-500/10 to-cyan-500/10"
+                  desc: "Works on mobile, tablet, and desktop"
                 }
               ].map((feature, index) => (
                 <motion.div
                   key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.6, 
-                    delay: 0.8 + index * 0.15,
-                    type: "spring",
-                    stiffness: 100
-                  }}
-                  whileHover={{ 
-                    y: -8,
-                    transition: { duration: 0.2 }
-                  }}
+                  transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
+                  className="p-6 rounded-lg border border-border bg-card"
                 >
-                  <div className={`relative p-6 md:p-8 rounded-3xl glass-hover transition-all duration-300 h-full overflow-hidden group`}>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                    <div className="relative z-10">
-                      <motion.div 
-                        className="text-4xl md:text-5xl mb-4"
-                        animate={{ 
-                          rotate: [0, 10, -10, 0],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 1,
-                        }}
-                      >
-                        {feature.icon}
-                      </motion.div>
-                      <h3 className="text-xl md:text-2xl font-bold mb-3">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm md:text-base text-muted-foreground font-medium">
-                        {feature.desc}
-                      </p>
-                    </div>
+                  <div className="p-2 bg-primary/10 rounded-lg w-fit mb-4">
+                    <feature.icon className="h-5 w-5 text-primary" />
                   </div>
+                  <h3 className="font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
 
-            {/* How it works section */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 1.2 }}
-              className="text-center space-y-6"
+              transition={{ duration: 0.3, delay: 0.7 }}
+              className="mt-12 text-center"
             >
-              <h2 className="text-2xl md:text-3xl font-bold">How It Works</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+              <h2 className="text-xl font-semibold mb-8">How It Works</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
                 {[
-                  { step: "1", title: "Create Session", desc: "Generate a unique 6-digit code" },
-                  { step: "2", title: "Join Devices", desc: "Enter code or scan QR on other devices" },
-                  { step: "3", title: "Share Content", desc: "Copy text, code, or upload files" },
-                  { step: "4", title: "Sync Instantly", desc: "Access from any connected device" }
-                ].map((item, index) => (
-                  <motion.div
-                    key={item.step}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ 
-                      duration: 0.5, 
-                      delay: 1.4 + index * 0.1,
-                      type: "spring"
-                    }}
-                    className="relative"
-                  >
-                    <div className="p-4 rounded-2xl glass-hover">
-                      <motion.div 
-                        className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-xl"
-                        whileHover={{ scale: 1.1, rotate: 360 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        {item.step}
-                      </motion.div>
-                      <h4 className="font-semibold mb-1">{item.title}</h4>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  { step: "1", title: "Create Session", desc: "Generate a 6-digit code" },
+                  { step: "2", title: "Join Devices", desc: "Enter code or scan QR" },
+                  { step: "3", title: "Share Content", desc: "Copy text or files" },
+                  { step: "4", title: "Sync Instantly", desc: "Access anywhere" }
+                ].map((item) => (
+                  <div key={item.step} className="text-center">
+                    <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
+                      {item.step}
                     </div>
-                    {index < 3 && (
-                      <div className="hidden md:block absolute top-1/2 -right-2 w-4 h-0.5 bg-gradient-primary" />
-                    )}
-                  </motion.div>
+                    <h4 className="font-medium text-sm mb-1">{item.title}</h4>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
                 ))}
               </div>
             </motion.div>

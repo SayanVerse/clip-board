@@ -2,14 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Upload, Copy, FileUp, Code2, Type } from "lucide-react";
+import { Send, Upload, Copy, Code2, Type, FileUp } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 import { CodeEditor } from "./CodeEditor";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 
 interface ClipboardInputProps {
   sessionId: string;
@@ -37,12 +37,12 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
           } else {
             setCode(clipboardText);
           }
-          toast.success("Pasted from clipboard! Sending...");
+          toast.success("Pasted from clipboard");
           await sendContent(clipboardText, mode === "code" ? "code" : "text");
         }
       } catch (error) {
         console.error("Failed to read clipboard:", error);
-        toast.error("Couldn't access clipboard. Please paste manually.");
+        toast.error("Couldn't access clipboard");
       }
     },
     onEscape: () => {
@@ -51,7 +51,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       } else {
         setCode("");
       }
-      toast.info("Content cleared");
+      toast.info("Cleared");
     },
     enabled: true,
   });
@@ -71,49 +71,6 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
     return () => document.removeEventListener("paste", handlePaste);
   }, [sessionId, deviceName, mode]);
 
-  const triggerConfetti = () => {
-    const count = 100;
-    const defaults = {
-      origin: { y: 0.7 },
-      zIndex: 9999,
-    };
-
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio),
-      });
-    }
-
-    fire(0.25, {
-      spread: 26,
-      startVelocity: 55,
-    });
-
-    fire(0.2, {
-      spread: 60,
-    });
-
-    fire(0.35, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 0.8,
-    });
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 25,
-      decay: 0.92,
-      scalar: 1.2,
-    });
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 45,
-    });
-  };
-
   const sendContent = async (content: string, contentType: "text" | "code" = "text") => {
     if (!content.trim()) return;
 
@@ -131,7 +88,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
 
       if (error) throw error;
 
-      toast.success(contentType === "code" ? "Code sent!" : "Text sent!");
+      toast.success(contentType === "code" ? "Code sent" : "Text sent");
       if (contentType === "text") {
         setText("");
       } else {
@@ -192,17 +149,14 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const filePath = `${sessionId}/${timestamp}_${sanitizedFileName}`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("clipboard-files")
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from("clipboard-files")
@@ -218,13 +172,9 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
           device_name: deviceName,
         });
 
-      if (insertError) {
-        console.error("Insert error:", insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      toast.success("File sent!");
-      triggerConfetti();
+      toast.success("File uploaded");
       
       await supabase
         .from("sessions")
@@ -232,7 +182,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
         .eq("id", sessionId);
     } catch (error: any) {
       console.error("Error uploading file:", error);
-      toast.error(error.message || "Failed to upload file");
+      toast.error(error.message || "Failed to upload");
     } finally {
       setIsSending(false);
     }
@@ -244,67 +194,49 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
     
     try {
       await navigator.clipboard.writeText(contentToCopy);
-      toast.success("Copied to clipboard!");
+      toast.success("Copied");
     } catch (error) {
-      console.error("Error copying:", error);
       toast.error("Failed to copy");
     }
   };
 
   return (
-    <motion.div 
-      className="space-y-3"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
-    >
+    <Card className="p-4 md:p-6 border border-border">
       <Tabs value={mode} onValueChange={(v) => setMode(v as "text" | "code")} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 rounded-3xl glass p-1">
-          <TabsTrigger value="text" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="text" className="text-sm">
             <Type className="h-4 w-4 mr-2" />
             Text
           </TabsTrigger>
-          <TabsTrigger value="code" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="code" className="text-sm">
             <Code2 className="h-4 w-4 mr-2" />
             Code
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="text" className="mt-4">
+        <TabsContent value="text" className="mt-0">
           <div
             ref={dropZoneRef}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-              "relative rounded-3xl transition-all duration-300",
-              isDragging && "ring-4 ring-primary/50 scale-[1.02]"
+              "relative transition-all duration-200",
+              isDragging && "ring-2 ring-primary ring-offset-2"
             )}
           >
             <AnimatePresence>
               {isDragging && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl glass"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 border-2 border-dashed border-primary"
                 >
-                  <div className="text-center p-8">
-                    <motion.div
-                      animate={{ 
-                        y: [0, -10, 0],
-                      }}
-                      transition={{ 
-                        repeat: Infinity, 
-                        duration: 1.5,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <FileUp className="h-16 w-16 text-primary mx-auto mb-4" />
-                    </motion.div>
-                    <p className="text-xl font-semibold text-primary">Drop file here</p>
-                    <p className="text-sm text-muted-foreground mt-2">Up to 20MB</p>
+                  <div className="text-center">
+                    <FileUp className="h-10 w-10 text-primary mx-auto mb-2" />
+                    <p className="font-medium text-primary">Drop file here</p>
+                    <p className="text-xs text-muted-foreground">Up to 20MB</p>
                   </div>
                 </motion.div>
               )}
@@ -313,7 +245,7 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
             <div className="relative">
               <Textarea
                 ref={textareaRef}
-                placeholder="Type or paste text... (Ctrl+V to auto-paste & send, Enter to send)"
+                placeholder="Type or paste text here..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
@@ -322,31 +254,23 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
                     sendText();
                   }
                 }}
-                className="min-h-[140px] resize-none pr-12 glass-hover border-2 transition-all duration-300 rounded-3xl"
+                className="min-h-[120px] resize-none pr-10"
               />
               {text && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={copyToClipboard}
                 >
-                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 rounded-2xl"
-                      onClick={copyToClipboard}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </motion.div>
-                </motion.div>
+                  <Copy className="h-4 w-4" />
+                </Button>
               )}
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="code" className="mt-4">
+        <TabsContent value="code" className="mt-0">
           <CodeEditor
             value={code}
             onChange={setCode}
@@ -357,54 +281,35 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
         </TabsContent>
       </Tabs>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 mt-4">
         {mode === "text" ? (
           <>
-            <motion.div 
+            <Button
+              onClick={() => sendText()}
+              disabled={!text.trim() || isSending}
               className="flex-1"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
-              <Button
-                onClick={() => sendText()}
-                disabled={!text.trim() || isSending}
-                className="w-full rounded-2xl h-12 shadow-lg"
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Send Text
-              </Button>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              <Send className="mr-2 h-4 w-4" />
+              Send
+            </Button>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSending}
+              variant="outline"
             >
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSending}
-                variant="secondary"
-                className="rounded-2xl h-12 px-6"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Send File
-              </Button>
-            </motion.div>
+              <Upload className="mr-2 h-4 w-4" />
+              File
+            </Button>
           </>
         ) : (
-          <motion.div 
+          <Button
+            onClick={sendCode}
+            disabled={!code.trim() || isSending}
             className="flex-1"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
-            <Button
-              onClick={sendCode}
-              disabled={!code.trim() || isSending}
-              className="w-full rounded-2xl h-12 shadow-lg"
-            >
-              <Code2 className="mr-2 h-4 w-4" />
-              Send Code
-            </Button>
-          </motion.div>
+            <Code2 className="mr-2 h-4 w-4" />
+            Send Code
+          </Button>
         )}
         
         <input
@@ -419,9 +324,9 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
         />
       </div>
 
-      <p className="text-xs text-center text-muted-foreground/70">
-        💡 Tip: Press <kbd className="px-2 py-0.5 rounded bg-muted text-xs">{mode === "code" ? "Ctrl+Enter" : "Enter"}</kbd> to send • <kbd className="px-2 py-0.5 rounded bg-muted text-xs">{mode === "code" ? "Enter" : "Shift+Enter"}</kbd> for new line • <kbd className="px-2 py-0.5 rounded bg-muted text-xs">Esc</kbd> to clear
+      <p className="text-xs text-center text-muted-foreground mt-3">
+        {mode === "code" ? "Ctrl+Enter to send • Enter for new line" : "Enter to send • Shift+Enter for new line"} • Esc to clear
       </p>
-    </motion.div>
+    </Card>
   );
 };
