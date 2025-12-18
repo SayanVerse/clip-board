@@ -7,7 +7,6 @@ import { QrCode, Link2, LogOut, Camera } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 import { QRScanner } from "./QRScanner";
 
 interface SessionManagerProps {
@@ -25,7 +24,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   useEffect(() => {
     if (sessionCode) {
       const url = `${window.location.origin}?code=${sessionCode}`;
-      QRCode.toDataURL(url, { width: 200, margin: 2 })
+      QRCode.toDataURL(url, { width: 180, margin: 2 })
         .then(setQrDataUrl)
         .catch(console.error);
     }
@@ -47,14 +46,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
       if (error) throw error;
 
       onSessionChange(session.id, session.session_code);
-      toast.success(`Session created! Code: ${session.session_code}`);
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#00b8d4', '#0097a7', '#00acc1'],
-      });
+      toast.success(`Session created: ${session.session_code}`);
     } catch (error) {
       console.error("Error creating session:", error);
       toast.error("Failed to create session");
@@ -89,14 +81,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
       }
 
       onSessionChange(session.id, session.session_code);
-      toast.success("Joined session successfully!");
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#00b8d4', '#0097a7', '#00acc1'],
-      });
+      toast.success("Joined session successfully");
     } catch (error) {
       console.error("Error joining session:", error);
       toast.error("Failed to join session");
@@ -114,56 +99,45 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   if (sessionId) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, type: "spring", stiffness: 200 }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
       >
-        <Card className="p-6 glass rounded-3xl shadow-elevated">
+        <Card className="p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Session Code</h3>
-              <motion.p 
-                className="text-4xl font-bold text-primary tracking-wider"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ 
-                  delay: 0.2,
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 15
-                }}
-              >
+              <p className="text-sm text-muted-foreground mb-1">Session Code</p>
+              <p className="text-3xl font-mono font-bold tracking-widest text-primary">
                 {sessionCode}
-              </motion.p>
+              </p>
             </div>
-            <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={leaveSession}
-                className="rounded-2xl"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </motion.div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={leaveSession}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
+          
           <AnimatePresence>
             {qrDataUrl && (
               <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="mt-6 flex justify-center"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex justify-center pt-4 border-t border-border"
               >
-                <div className="p-4 glass rounded-3xl">
-                  <img src={qrDataUrl} alt="Session QR Code" className="rounded-2xl" />
+                <div className="p-3 bg-white rounded-lg">
+                  <img src={qrDataUrl} alt="Session QR Code" className="w-[140px] h-[140px]" />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+          
           <p className="text-xs text-muted-foreground text-center mt-4">
-            Share this code or QR code with other devices to sync clipboards
+            Share this code or scan QR to sync devices
           </p>
         </Card>
       </motion.div>
@@ -172,66 +146,60 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+      transition={{ duration: 0.2 }}
     >
-      <Card className="p-8 glass rounded-3xl shadow-elevated">
+      <Card className="p-6 border border-border">
         <div className="space-y-6">
           <div>
-            <h3 className="text-xl font-semibold mb-3">Create New Session</h3>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                onClick={createSession} 
-                disabled={isLoading}
-                className="w-full rounded-2xl h-12 shadow-lg"
-              >
-                <QrCode className="mr-2 h-5 w-5" />
-                Generate Session Code
-              </Button>
-            </motion.div>
+            <h3 className="font-semibold mb-3">Create New Session</h3>
+            <Button 
+              onClick={createSession} 
+              disabled={isLoading}
+              className="w-full"
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              Generate Session Code
+            </Button>
           </div>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t-2 border-border/50" />
+              <span className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-sm uppercase font-medium">
-              <span className="glass px-4 py-1 rounded-full text-muted-foreground">Or</span>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or</span>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-3">Join Existing Session</h3>
+            <h3 className="font-semibold mb-3">Join Existing Session</h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 placeholder="000000"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 maxLength={6}
-                className="text-center text-2xl tracking-widest font-bold rounded-2xl h-12 glass-hover border-2"
+                className="text-center text-xl tracking-[0.5em] font-mono"
               />
-              <div className="flex gap-3">
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button 
-                    onClick={() => setShowScanner(true)} 
-                    variant="outline"
-                    className="rounded-2xl h-12 px-6"
-                  >
-                    <Camera className="mr-2 h-5 w-5" />
-                    Scan
-                  </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button 
-                    onClick={() => joinSession()} 
-                    disabled={isLoading || joinCode.length !== 6}
-                    className="rounded-2xl h-12 px-6"
-                  >
-                    <Link2 className="mr-2 h-5 w-5" />
-                    Join
-                  </Button>
-                </motion.div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setShowScanner(true)} 
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Scan
+                </Button>
+                <Button 
+                  onClick={() => joinSession()} 
+                  disabled={isLoading || joinCode.length !== 6}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Join
+                </Button>
               </div>
             </div>
           </div>
