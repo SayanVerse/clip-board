@@ -10,6 +10,7 @@ import { HistorySkeleton } from "./HistorySkeleton";
 import { Editor } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { feedback } from "@/hooks/useFeedback";
 
 interface ClipboardItem {
   id: string;
@@ -46,7 +47,7 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
         .select("*")
         .eq("session_id", sessionId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (error) throw error;
       setItems((data || []) as ClipboardItem[]);
@@ -84,8 +85,10 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
     try {
       await navigator.clipboard.writeText(text);
       toast.success("Copied");
+      feedback.copy();
     } catch (error) {
       toast.error("Failed to copy");
+      feedback.error();
     }
   };
 
@@ -134,43 +137,61 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
     return 'other';
   };
 
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return date.toLocaleDateString();
+  };
+
   if (isLoading) {
     return <HistorySkeleton />;
   }
 
   return (
-    <Card className="p-4 md:p-6 border border-border">
+    <Card className="p-4 md:p-5 border border-border h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">History</h3>
-        <div className="flex gap-2">
+        <div>
+          <h3 className="font-semibold">History</h3>
+          <p className="text-xs text-muted-foreground">{items.length} items</p>
+        </div>
+        <div className="flex gap-1">
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon"
+            className="h-8 w-8"
             onClick={loadHistory}
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Refresh
+            <RefreshCw className="h-4 w-4" />
           </Button>
           {items.length > 0 && (
             <Button 
               variant="ghost" 
-              size="sm" 
+              size="sm"
+              className="text-xs text-muted-foreground hover:text-destructive"
               onClick={clearAll}
-              className="text-muted-foreground hover:text-destructive"
             >
-              Clear All
+              Clear
             </Button>
           )}
         </div>
       </div>
 
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[calc(100vh-280px)] lg:h-[calc(100vh-200px)]">
         {items.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">
-            No items yet. Start by sending text or files.
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="p-3 rounded-full bg-muted mb-3">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">No items yet</p>
+            <p className="text-xs text-muted-foreground">Start by sending text or files</p>
+          </div>
         ) : (
-          <div className="space-y-3 pr-4">
+          <div className="space-y-2 pr-3">
             <AnimatePresence mode="popLayout">
               {items.map((item) => (
                 <motion.div
@@ -178,141 +199,113 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.15 }}
                   layout
                 >
-                  <div className="p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="group p-3 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 rounded bg-muted shrink-0">
+                        {item.content_type === "text" && <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {item.content_type === "code" && <Code2 className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {item.content_type === "file" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </div>
+                      
                       <div className="flex-1 min-w-0">
-                        {item.content_type === "text" ? (
-                          <>
-                            <div className="flex items-center gap-2 mb-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {item.device_name || "Unknown"}
-                              </span>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] text-muted-foreground">{item.device_name || "Unknown"}</span>
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                          <span className="text-[10px] text-muted-foreground">{formatTime(item.created_at)}</span>
+                          {item.content_type === "code" && item.language && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                              {item.language}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {item.content_type === "text" && (
+                          <p className="text-sm break-words line-clamp-2">{item.content}</p>
+                        )}
+                        
+                        {item.content_type === "code" && (
+                          expandedCode === item.id ? (
+                            <div className="rounded overflow-hidden border border-border mt-1">
+                              <Editor
+                                height="150px"
+                                language={item.language || "plaintext"}
+                                value={item.content || ""}
+                                theme={theme === "dark" ? "vs-dark" : "light"}
+                                options={{
+                                  readOnly: true,
+                                  minimap: { enabled: false },
+                                  fontSize: 11,
+                                  lineNumbers: "off",
+                                  scrollBeyondLastLine: false,
+                                  automaticLayout: true,
+                                  wordWrap: "on",
+                                  padding: { top: 8, bottom: 8 },
+                                }}
+                              />
                             </div>
-                            <p className="text-sm break-words line-clamp-3">{item.content}</p>
-                          </>
-                        ) : item.content_type === "code" ? (
+                          ) : (
+                            <button
+                              onClick={() => setExpandedCode(item.id)}
+                              className="text-xs text-left w-full p-2 rounded bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2"
+                            >
+                              {item.content}
+                            </button>
+                          )
+                        )}
+                        
+                        {item.content_type === "file" && (
                           <>
-                            <div className="flex items-center gap-2 mb-2">
-                              <Code2 className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {item.device_name || "Unknown"}
-                              </span>
-                              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                {item.language || "plaintext"}
-                              </span>
-                            </div>
-                            {expandedCode === item.id ? (
-                              <div className="rounded-lg overflow-hidden border border-border mt-2">
-                                <Editor
-                                  height="180px"
-                                  language={item.language || "plaintext"}
-                                  value={item.content || ""}
-                                  theme={theme === "dark" ? "vs-dark" : "light"}
-                                  options={{
-                                    readOnly: true,
-                                    minimap: { enabled: false },
-                                    fontSize: 12,
-                                    lineNumbers: "on",
-                                    scrollBeyondLastLine: false,
-                                    automaticLayout: true,
-                                    wordWrap: "on",
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setExpandedCode(item.id)}
-                                className="text-sm text-left w-full p-2 rounded bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2"
-                              >
-                                {item.content}
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2 mb-2">
-                              <Download className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {item.device_name || "Unknown"}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium truncate mb-2">{item.file_name}</p>
-                            
+                            <p className="text-sm font-medium truncate">{item.file_name}</p>
                             {getFileType(item.file_name) === 'image' && (
                               <div 
-                                className="relative rounded-lg overflow-hidden cursor-pointer group"
+                                className="relative rounded overflow-hidden cursor-pointer mt-2 group/img"
                                 onClick={() => setPreviewFile(item)}
                               >
                                 <img 
                                   src={item.file_url} 
                                   alt={item.file_name} 
-                                  className="w-full h-40 object-cover"
+                                  className="w-full h-32 object-cover"
                                 />
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Maximize2 className="h-6 w-6 text-white" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Maximize2 className="h-5 w-5 text-white" />
                                 </div>
                               </div>
                             )}
-                            
-                            {getFileType(item.file_name) === 'pdf' && (
-                              <button
-                                onClick={() => setPreviewFile(item)}
-                                className="w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors flex items-center justify-center gap-2"
-                              >
-                                <FileText className="h-4 w-4" />
-                                <span className="text-sm">Preview PDF</span>
-                              </button>
-                            )}
                           </>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(item.created_at).toLocaleString()}
-                        </p>
                       </div>
-
-                      <div className="flex gap-1">
-                        {(item.content_type === "text" || item.content_type === "code") ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => copyText(item.content!)}
-                              className="h-8 w-8"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            {item.content_type === "code" && expandedCode === item.id && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setExpandedCode(null)}
-                                className="h-8 w-8"
-                              >
-                                <Code2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </>
-                        ) : (
+                      
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {(item.content_type === "text" || item.content_type === "code") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyText(item.content!)}
+                            className="h-7 w-7"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {item.content_type === "file" && (
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => window.open(item.file_url, "_blank")}
-                            className="h-8 w-8"
+                            className="h-7 w-7"
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-3.5 w-3.5" />
                           </Button>
                         )}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteItem(item.id)}
-                          className="h-8 w-8 hover:text-destructive"
+                          className="h-7 w-7 hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
