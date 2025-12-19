@@ -24,7 +24,8 @@ export type Database = {
           file_url: string | null
           id: string
           language: string | null
-          session_id: string
+          session_id: string | null
+          user_id: string | null
         }
         Insert: {
           content?: string | null
@@ -35,7 +36,8 @@ export type Database = {
           file_url?: string | null
           id?: string
           language?: string | null
-          session_id: string
+          session_id?: string | null
+          user_id?: string | null
         }
         Update: {
           content?: string | null
@@ -46,7 +48,8 @@ export type Database = {
           file_url?: string | null
           id?: string
           language?: string | null
-          session_id?: string
+          session_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -57,6 +60,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
       }
       sessions: {
         Row: {

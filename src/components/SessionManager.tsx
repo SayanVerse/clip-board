@@ -5,31 +5,31 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { QrCode, Link2, LogOut, Camera, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRScanner } from "./QRScanner";
+import { FancyQRCode } from "./FancyQRCode";
 import { feedback } from "@/hooks/useFeedback";
 
 interface SessionManagerProps {
   sessionId: string | null;
   sessionCode: string | null;
   onSessionChange: (sessionId: string | null, sessionCode: string | null) => void;
+  initialCode?: string | null;
 }
 
-export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: SessionManagerProps) => {
-  const [joinCode, setJoinCode] = useState("");
+export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initialCode }: SessionManagerProps) => {
+  const [joinCode, setJoinCode] = useState(initialCode || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
 
+  // Auto-join when initialCode is provided
   useEffect(() => {
-    if (sessionCode) {
-      const url = `${window.location.origin}?code=${sessionCode}`;
-      QRCode.toDataURL(url, { width: 160, margin: 2 })
-        .then(setQrDataUrl)
-        .catch(console.error);
+    if (initialCode && initialCode.length === 4 && !sessionId) {
+      joinSession(initialCode);
+      // Clear the URL parameter after joining
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [sessionCode]);
+  }, [initialCode, sessionId]);
 
   const createSession = async () => {
     setIsLoading(true);
@@ -99,7 +99,6 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
   const leaveSession = () => {
     onSessionChange(null, null);
-    setQrDataUrl(null);
     toast.info("Left session");
   };
 
@@ -131,6 +130,8 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
   };
 
   if (sessionId) {
+    const qrUrl = `${window.location.origin}?code=${sessionCode}`;
+    
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -174,16 +175,14 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
           </div>
           
           <AnimatePresence>
-            {qrDataUrl && (
+            {sessionCode && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="flex justify-center pt-3 border-t border-border"
               >
-                <div className="p-2 bg-white rounded-lg">
-                  <img src={qrDataUrl} alt="QR Code" className="w-[120px] h-[120px]" />
-                </div>
+                <FancyQRCode value={qrUrl} size={140} />
               </motion.div>
             )}
           </AnimatePresence>
