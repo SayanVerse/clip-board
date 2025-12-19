@@ -2,13 +2,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Keyboard } from "lucide-react";
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const modKey = isMac ? "⌘" : "Ctrl";
+
 const shortcuts = [
   { keys: ["Enter"], description: "Send text (in text mode)" },
   { keys: ["Shift", "Enter"], description: "New line (in text mode)" },
-  { keys: ["Ctrl", "Enter"], description: "Send code (in code mode)" },
-  { keys: ["Ctrl", "V"], description: "Paste and auto-send" },
+  { keys: [modKey, "Enter"], description: "Send code (in code mode)" },
+  { keys: [modKey, "V"], description: "Paste and auto-send" },
   { keys: ["Esc"], description: "Clear input" },
-  { keys: ["Ctrl", "C"], description: "Copy selected text" },
+  { keys: [modKey, "C"], description: "Copy selected text" },
 ];
 
 export const KeyboardShortcuts = () => {

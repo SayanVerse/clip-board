@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QrCode, Link2, LogOut, Camera, Copy } from "lucide-react";
+import { QrCode, Link2, LogOut, Camera, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,8 +60,8 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
 
   const joinSession = async (codeToJoin?: string) => {
     const code = codeToJoin || joinCode;
-    if (!code || code.length !== 6) {
-      toast.error("Please enter a valid 6-digit code");
+    if (!code || code.length !== 4) {
+      toast.error("Please enter a valid 4-digit code");
       return;
     }
 
@@ -114,6 +114,22 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
     }
   };
 
+  const shareLink = async () => {
+    if (!sessionCode) return;
+    const url = `${window.location.origin}?code=${sessionCode}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Clip-Board Session", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+      feedback.copy();
+    } catch {
+      toast.error("Failed to share");
+    }
+  };
+
   if (sessionId) {
     return (
       <motion.div
@@ -136,6 +152,14 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
                   onClick={copyCode}
                 >
                   <Copy className="h-3.5 w-3.5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={shareLink}
+                >
+                  <Share2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -205,11 +229,11 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
           <div>
             <div className="flex gap-2">
               <Input
-                placeholder="000000"
+                placeholder="0000"
                 value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                maxLength={6}
-                className="text-center text-lg tracking-[0.4em] font-mono h-9"
+                onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                maxLength={4}
+                className="text-center text-lg tracking-[0.5em] font-mono h-9"
               />
               <Button 
                 onClick={() => setShowScanner(true)} 
@@ -222,7 +246,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange }: Sess
             </div>
             <Button 
               onClick={() => joinSession()} 
-              disabled={isLoading || joinCode.length !== 6}
+              disabled={isLoading || joinCode.length !== 4}
               className="w-full mt-2"
               size="sm"
             >

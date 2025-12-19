@@ -59,19 +59,32 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange, onSend
         </Select>
       </div>
 
-      <div className="rounded-3xl overflow-hidden border-2 border-border bg-card">
+      <div 
+        className="rounded-3xl overflow-hidden border-2 border-border bg-card"
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            if (onSend) onSend();
+          }
+        }}
+      >
         <Editor
           height="300px"
           language={language}
           value={value}
           onChange={(newValue) => onChange(newValue || "")}
           onMount={(editor, monaco) => {
+            // Add both Ctrl+Enter and Cmd+Enter for cross-platform support
             editor.addCommand(
               monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
               () => {
-                if (onSend) {
-                  onSend();
-                }
+                if (onSend) onSend();
+              }
+            );
+            editor.addCommand(
+              monaco.KeyMod.WinCtrl | monaco.KeyCode.Enter,
+              () => {
+                if (onSend) onSend();
               }
             );
           }}
