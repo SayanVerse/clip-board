@@ -6,7 +6,7 @@ interface SessionTimerProps {
   duration?: number; // in ms, default 1 hour
 }
 
-export const SessionTimer = ({ startTime, duration = 3600000 }: SessionTimerProps) => {
+export const SessionTimer = ({ startTime, duration = 7200000 }: SessionTimerProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
 
   useEffect(() => {
@@ -24,8 +24,12 @@ export const SessionTimer = ({ startTime, duration = 3600000 }: SessionTimerProp
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 

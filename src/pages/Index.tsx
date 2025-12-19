@@ -55,7 +55,7 @@ const Index = () => {
     if (storedSessionId && storedSessionCode && sessionStartTime) {
       const startTime = parseInt(sessionStartTime);
       const timeElapsed = Date.now() - startTime;
-      if (timeElapsed < 3600000) {
+      if (timeElapsed < 7200000) {
         setSessionId(storedSessionId);
         setSessionCode(storedSessionCode);
         setSessionStart(startTime);
@@ -83,7 +83,7 @@ const Index = () => {
       const startTime = localStorage.getItem("clipboard_session_start");
       if (startTime) {
         const timeElapsed = Date.now() - parseInt(startTime);
-        if (timeElapsed >= 3600000) {
+        if (timeElapsed >= 7200000) {
           handleSessionChange(null, null);
         }
       }
@@ -101,7 +101,7 @@ const Index = () => {
             <div className="p-1.5 bg-primary rounded-lg">
               <Clipboard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-sm">CopyPaste</span>
+            <span className="font-semibold text-sm">Clip-Board</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ const Index = () => {
                 <span className="text-primary"> instantly</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-8">
-                Sync text, code, and files across all your devices with a simple 6-digit code.
+                Sync text, code, and files across all your devices with a simple 4-digit code.
               </p>
               
               <div className="max-w-md mx-auto">
@@ -168,22 +168,22 @@ const Index = () => {
               transition={{ duration: 0.4, delay: 0.3 }}
             >
               <h2 className="text-2xl font-semibold text-center mb-8">How it works</h2>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
                 {[
                   { step: "1", title: "Create", desc: "Generate a session" },
                   { step: "2", title: "Share", desc: "Send the code" },
                   { step: "3", title: "Sync", desc: "Start sharing" },
                 ].map((item, index, arr) => (
-                  <div key={item.step} className="flex items-center gap-4 md:gap-8">
+                  <div key={item.step} className="relative flex flex-col items-center">
                     <div className="text-center">
-                      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-2">
+                      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-3 mx-auto">
                         {item.step}
                       </div>
-                      <h4 className="font-medium">{item.title}</h4>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      <h4 className="font-medium mb-1">{item.title}</h4>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
                     {index < arr.length - 1 && (
-                      <ArrowRight className="h-5 w-5 text-muted-foreground hidden md:block" />
+                      <ArrowRight className="h-5 w-5 text-muted-foreground absolute -right-6 top-5 hidden md:block" />
                     )}
                   </div>
                 ))}
@@ -215,8 +215,10 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-4 mt-auto">
-        <div className="container max-w-6xl mx-auto px-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} CopyPaste Server · Sessions expire after 1 hour
+        <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-muted-foreground">
+          <span>© {new Date().getFullYear()} Clip-Board · Sessions expire after 2 hours</span>
+          <span className="hidden sm:inline">·</span>
+          <a href="/contact" className="hover:text-foreground transition-colors">Contact Developer</a>
         </div>
       </footer>
     </div>
