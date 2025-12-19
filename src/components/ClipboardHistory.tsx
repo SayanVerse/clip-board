@@ -24,10 +24,11 @@ interface ClipboardItem {
 }
 
 interface ClipboardHistoryProps {
-  sessionId: string;
+  sessionId: string | null;
+  userId?: string;
 }
 
-export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
+export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) => {
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
@@ -36,18 +37,30 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
 
   useEffect(() => {
     loadHistory();
-    subscribeToChanges();
-  }, [sessionId]);
+    const unsubscribe = subscribeToChanges();
+    return unsubscribe;
+  }, [sessionId, userId]);
 
   const loadHistory = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("clipboard_items")
         .select("*")
-        .eq("session_id", sessionId)
         .order("created_at", { ascending: false })
         .limit(50);
+
+      if (userId) {
+        query = query.eq("user_id", userId);
+      } else if (sessionId) {
+        query = query.eq("session_id", sessionId);
+      } else {
+        setItems([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setItems((data || []) as ClipboardItem[]);
@@ -60,15 +73,20 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
   };
 
   const subscribeToChanges = () => {
+    const filterColumn = userId ? "user_id" : "session_id";
+    const filterValue = userId || sessionId;
+    
+    if (!filterValue) return () => {};
+
     const channel = supabase
-      .channel(`clipboard:${sessionId}`)
+      .channel(`clipboard:${filterValue}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "clipboard_items",
-          filter: `session_id=eq.${sessionId}`,
+          filter: `${filterColumn}=eq.${filterValue}`,
         },
         () => {
           loadHistory();
@@ -108,10 +126,17 @@ export const ClipboardHistory = ({ sessionId }: ClipboardHistoryProps) => {
 
   const clearAll = async () => {
     try {
-      const { error } = await supabase
-        .from("clipboard_items")
-        .delete()
-        .eq("session_id", sessionId);
+      let query = supabase.from("clipboard_items").delete();
+      
+      if (userId) {
+        query = query.eq("user_id", userId);
+      } else if (sessionId) {
+        query = query.eq("session_id", sessionId);
+      } else {
+        return;
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
       toast.success("History cleared");

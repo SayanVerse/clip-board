@@ -5,7 +5,9 @@ import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SessionTimer } from "@/components/SessionTimer";
-import { Clipboard, Shield, Zap, Monitor, ArrowRight } from "lucide-react";
+import { AuthButton } from "@/components/AuthButton";
+import { useAuth } from "@/hooks/useAuth";
+import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud } from "lucide-react";
 import { motion } from "framer-motion";
 
 const getDeviceName = () => {
@@ -21,6 +23,9 @@ const Index = () => {
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [deviceName] = useState(getDeviceName());
+  const [urlCode, setUrlCode] = useState<string | null>(null);
+  
+  const { user, loading: authLoading } = useAuth();
 
   const handleSessionChange = useCallback((newSessionId: string | null, newSessionCode: string | null) => {
     setSessionId(newSessionId);
@@ -41,13 +46,16 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    // Check URL for session code
     const urlParams = new URLSearchParams(window.location.search);
     const codeParam = urlParams.get("code");
     
-    if (codeParam) {
-      setSessionCode(codeParam);
+    if (codeParam && codeParam.length === 4) {
+      setUrlCode(codeParam);
+      return; // Don't restore from localStorage if we have a URL code
     }
     
+    // Restore session from localStorage
     const storedSessionId = localStorage.getItem("clipboard_session_id");
     const storedSessionCode = localStorage.getItem("clipboard_session_code");
     const sessionStartTime = localStorage.getItem("clipboard_session_start");
@@ -92,6 +100,10 @@ const Index = () => {
     return () => clearInterval(checkInterval);
   }, [sessionId, handleSessionChange]);
 
+  // Check if user is logged in - they get auto-sync mode
+  const isLoggedIn = !!user && !authLoading;
+  const hasActiveSession = isLoggedIn || !!sessionId;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -108,14 +120,21 @@ const Index = () => {
             {sessionId && sessionStart && (
               <SessionTimer startTime={sessionStart} />
             )}
+            {isLoggedIn && !sessionId && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-full">
+                <Cloud className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">Synced</span>
+              </div>
+            )}
             <KeyboardShortcuts />
             <ThemeToggle />
+            <AuthButton />
           </div>
         </div>
       </header>
 
       <main className="flex-1">
-        {!sessionId ? (
+        {!hasActiveSession ? (
           // Landing view
           <div className="container max-w-6xl mx-auto px-4 py-12 md:py-20">
             <motion.div 
@@ -129,7 +148,9 @@ const Index = () => {
                 <span className="text-primary"> instantly</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-8">
-                Sync text, code, and files across all your devices with a simple 4-digit code.
+                {isLoggedIn 
+                  ? "Sign in with Google to sync across all your devices automatically."
+                  : "Sync text, code, and files across all your devices with a simple 4-digit code."}
               </p>
               
               <div className="max-w-md mx-auto">
@@ -137,6 +158,7 @@ const Index = () => {
                   sessionId={sessionId}
                   sessionCode={sessionCode}
                   onSessionChange={handleSessionChange}
+                  initialCode={urlCode}
                 />
               </div>
             </motion.div>
@@ -193,22 +215,48 @@ const Index = () => {
         ) : (
           // Active session view - Two column layout
           <div className="container max-w-6xl mx-auto px-4 py-6">
-            <div className="grid lg:grid-cols-[380px_1fr] gap-6">
-              {/* Left sidebar */}
-              <div className="space-y-6">
-                <SessionManager
-                  sessionId={sessionId}
-                  sessionCode={sessionCode}
-                  onSessionChange={handleSessionChange}
-                />
-                <ClipboardInput sessionId={sessionId} deviceName={deviceName} />
+            {isLoggedIn && !sessionId ? (
+              // Logged-in user auto-sync mode
+              <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+                <div className="space-y-6">
+                  <div className="p-4 rounded-xl border border-border bg-card">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <Cloud className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">Auto-Sync Mode</p>
+                        <p className="text-xs text-muted-foreground">Synced across all your devices</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      All clipboard items are automatically synced to devices where you're signed in with the same Google account.
+                    </p>
+                  </div>
+                  <ClipboardInput sessionId={null} deviceName={deviceName} userId={user?.id} />
+                </div>
+                
+                <div>
+                  <ClipboardHistory sessionId={null} userId={user?.id} />
+                </div>
               </div>
-              
-              {/* Right content */}
-              <div>
-                <ClipboardHistory sessionId={sessionId} />
+            ) : (
+              // Session-based mode
+              <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+                <div className="space-y-6">
+                  <SessionManager
+                    sessionId={sessionId}
+                    sessionCode={sessionCode}
+                    onSessionChange={handleSessionChange}
+                  />
+                  <ClipboardInput sessionId={sessionId!} deviceName={deviceName} />
+                </div>
+                
+                <div>
+                  <ClipboardHistory sessionId={sessionId!} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </main>
@@ -216,7 +264,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-4 mt-auto">
         <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} Clip-Board · Sessions expire after 2 hours</span>
+          <span>© {new Date().getFullYear()} Clip-Board</span>
           <span className="hidden sm:inline">·</span>
           <a href="/contact" className="hover:text-foreground transition-colors">Contact Developer</a>
         </div>

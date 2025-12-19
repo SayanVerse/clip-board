@@ -13,11 +13,12 @@ import { Card } from "@/components/ui/card";
 import { feedback } from "@/hooks/useFeedback";
 
 interface ClipboardInputProps {
-  sessionId: string;
+  sessionId: string | null;
   deviceName: string;
+  userId?: string;
 }
 
-export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) => {
+export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInputProps) => {
   const [text, setText] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
@@ -71,21 +72,26 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
 
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [sessionId, deviceName, mode]);
+  }, [sessionId, userId, deviceName, mode]);
 
   const sendContent = async (content: string, contentType: "text" | "code" = "text") => {
     if (!content.trim()) return;
+    if (!sessionId && !userId) {
+      toast.error("No active session");
+      return;
+    }
 
     setIsSending(true);
     try {
       const { error } = await supabase
         .from("clipboard_items")
         .insert({
-          session_id: sessionId,
           content_type: contentType,
           content: content,
           device_name: deviceName,
           language: contentType === "code" ? language : null,
+          user_id: userId || undefined,
+          session_id: sessionId || undefined,
         });
 
       if (error) throw error;
@@ -99,10 +105,12 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
         setCode("");
       }
       
-      await supabase
-        .from("sessions")
-        .update({ last_activity: new Date().toISOString() })
-        .eq("id", sessionId);
+      if (sessionId) {
+        await supabase
+          .from("sessions")
+          .update({ last_activity: new Date().toISOString() })
+          .eq("id", sessionId);
+      }
     } catch (error) {
       console.error("Error sending content:", error);
       toast.error("Failed to send");
@@ -149,11 +157,17 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       return;
     }
 
+    if (!sessionId && !userId) {
+      toast.error("No active session");
+      return;
+    }
+
     setIsSending(true);
     try {
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const filePath = `${sessionId}/${timestamp}_${sanitizedFileName}`;
+      const folder = userId || sessionId;
+      const filePath = `${folder}/${timestamp}_${sanitizedFileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from("clipboard-files")
@@ -171,11 +185,12 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       const { error: insertError } = await supabase
         .from("clipboard_items")
         .insert({
-          session_id: sessionId,
           content_type: "file",
           file_name: file.name,
           file_url: publicUrl,
           device_name: deviceName,
+          user_id: userId || undefined,
+          session_id: sessionId || undefined,
         });
 
       if (insertError) throw insertError;
@@ -183,13 +198,16 @@ export const ClipboardInput = ({ sessionId, deviceName }: ClipboardInputProps) =
       toast.success("File uploaded");
       feedback.send();
       
-      await supabase
-        .from("sessions")
-        .update({ last_activity: new Date().toISOString() })
-        .eq("id", sessionId);
-    } catch (error: any) {
+      if (sessionId) {
+        await supabase
+          .from("sessions")
+          .update({ last_activity: new Date().toISOString() })
+          .eq("id", sessionId);
+      }
+    } catch (error: unknown) {
       console.error("Error uploading file:", error);
-      toast.error(error.message || "Failed to upload");
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload";
+      toast.error(errorMessage);
       feedback.error();
     } finally {
       setIsSending(false);
