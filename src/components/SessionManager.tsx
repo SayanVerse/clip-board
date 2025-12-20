@@ -15,9 +15,10 @@ interface SessionManagerProps {
   sessionCode: string | null;
   onSessionChange: (sessionId: string | null, sessionCode: string | null) => void;
   initialCode?: string | null;
+  showCreateOnly?: boolean;
 }
 
-export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initialCode }: SessionManagerProps) => {
+export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initialCode, showCreateOnly }: SessionManagerProps) => {
   const [joinCode, setJoinCode] = useState(initialCode || "");
   const [isLoading, setIsLoading] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -195,11 +196,26 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
     );
   }
 
+  if (showCreateOnly) {
+    return (
+      <Button 
+        onClick={createSession} 
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className="w-full"
+      >
+        <QrCode className="mr-2 h-4 w-4" />
+        Create Session Code
+      </Button>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
     >
       <Card className="p-5 border border-border">
         <div className="space-y-5">
