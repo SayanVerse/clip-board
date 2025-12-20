@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SessionTimer } from "@/components/SessionTimer";
 import { AuthButton } from "@/components/AuthButton";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useAuth } from "@/hooks/useAuth";
 import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud } from "lucide-react";
 import { motion } from "framer-motion";
@@ -105,9 +106,11 @@ const Index = () => {
   const hasActiveSession = isLoggedIn || !!sessionId;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
+      <AnimatedBackground />
+      
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-1.5 bg-primary rounded-lg">
