@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,7 @@ interface ClipboardItem {
   device_name?: string;
   language?: string;
   created_at: string;
+  is_pinned?: boolean;
 }
 
 interface ClipboardHistoryProps {
@@ -47,6 +48,7 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       let query = supabase
         .from("clipboard_items")
         .select("*")
+        .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -121,6 +123,21 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       toast.success("Deleted");
     } catch (error) {
       toast.error("Failed to delete");
+    }
+  };
+
+  const togglePin = async (id: string, currentPinned: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("clipboard_items")
+        .update({ is_pinned: !currentPinned })
+        .eq("id", id);
+
+      if (error) throw error;
+      toast.success(currentPinned ? "Unpinned" : "Pinned");
+      loadHistory();
+    } catch (error) {
+      toast.error("Failed to update");
     }
   };
 
@@ -227,12 +244,13 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                   transition={{ duration: 0.15 }}
                   layout
                 >
-                  <div className="group p-3 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors">
+                  <div className={`group p-3 rounded-lg border bg-card hover:bg-accent/30 transition-all duration-100 ${item.is_pinned ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
                     <div className="flex items-start gap-3">
-                      <div className="p-1.5 rounded bg-muted shrink-0">
-                        {item.content_type === "text" && <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {item.content_type === "code" && <Code2 className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {item.content_type === "file" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}
+                      <div className={`p-1.5 rounded shrink-0 ${item.is_pinned ? 'bg-primary/20' : 'bg-muted'}`}>
+                        {item.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
+                        {!item.is_pinned && item.content_type === "text" && <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {!item.is_pinned && item.content_type === "code" && <Code2 className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {!item.is_pinned && item.content_type === "file" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}
                       </div>
                       
                       <div className="flex-1 min-w-0">
@@ -324,6 +342,14 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => togglePin(item.id, item.is_pinned || false)}
+                          className={`h-7 w-7 ${item.is_pinned ? 'text-primary' : ''}`}
+                        >
+                          {item.is_pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

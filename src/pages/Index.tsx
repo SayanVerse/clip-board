@@ -141,7 +141,7 @@ const Index = () => {
               className="text-center max-w-2xl mx-auto mb-16"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
                 Share clipboard
@@ -168,7 +168,7 @@ const Index = () => {
               className="grid md:grid-cols-3 gap-6 mb-16"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
+              transition={{ duration: 0.25, delay: 0.1 }}
             >
               {[
                 { icon: Shield, title: "Secure", desc: "End-to-end encryption, auto-expiring sessions" },
@@ -187,7 +187,7 @@ const Index = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
+              transition={{ duration: 0.25, delay: 0.15 }}
             >
               <h2 className="text-2xl font-semibold text-center mb-8">How it works</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
@@ -216,30 +216,36 @@ const Index = () => {
           // Active session view - Two column layout
           <div className="container max-w-6xl mx-auto px-4 py-6">
             {isLoggedIn && !sessionId ? (
-              // Logged-in user auto-sync mode
-              <div className="grid lg:grid-cols-[380px_1fr] gap-6">
-                <div className="space-y-6">
-                  <div className="p-4 rounded-xl border border-border bg-card">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <Cloud className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">Auto-Sync Mode</p>
-                        <p className="text-xs text-muted-foreground">Synced across all your devices</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      All clipboard items are automatically synced to devices where you're signed in with the same Google account.
-                    </p>
+          // Logged-in user auto-sync mode
+          <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl border border-border bg-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Cloud className="h-5 w-5 text-primary" />
                   </div>
-                  <ClipboardInput sessionId={null} deviceName={deviceName} userId={user?.id} />
+                  <div>
+                    <p className="font-medium text-sm">Auto-Sync Mode</p>
+                    <p className="text-xs text-muted-foreground">Synced across all your devices</p>
+                  </div>
                 </div>
-                
-                <div>
-                  <ClipboardHistory sessionId={null} userId={user?.id} />
-                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  All clipboard items are automatically synced to devices where you're signed in with the same Google account.
+                </p>
+                <SessionManager
+                  sessionId={sessionId}
+                  sessionCode={sessionCode}
+                  onSessionChange={handleSessionChange}
+                  showCreateOnly
+                />
               </div>
+              <ClipboardInput sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
+            </div>
+            
+            <div>
+              <ClipboardHistory sessionId={sessionId} userId={user?.id} />
+            </div>
+          </div>
             ) : (
               // Session-based mode
               <div className="grid lg:grid-cols-[380px_1fr] gap-6">
