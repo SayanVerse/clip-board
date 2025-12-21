@@ -3,91 +3,111 @@ import { motion } from "framer-motion";
 export const AnimatedBackground = () => {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5 dark:to-primary/10" />
+      {/* Base gradient - Light mode: soft blue, Dark mode: pure black */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5 dark:from-black dark:via-black dark:to-black" />
       
-      {/* Animated orbs - Light mode */}
+      {/* Animated orbs - Larger, more prominent in light mode */}
       <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full bg-primary/10 dark:bg-primary/20 blur-[100px]"
+        className="absolute w-[600px] h-[600px] rounded-full bg-primary/8 dark:bg-primary/15 blur-[120px]"
         animate={{
-          x: [0, 100, 50, 0],
-          y: [0, 50, 100, 0],
-          scale: [1, 1.1, 0.95, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{ top: "10%", left: "10%" }}
-      />
-      
-      <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full bg-accent-foreground/5 dark:bg-primary-glow/15 blur-[80px]"
-        animate={{
-          x: [0, -80, -40, 0],
-          y: [0, 80, 40, 0],
-          scale: [1, 0.9, 1.1, 1],
+          x: [0, 80, 40, 0],
+          y: [0, 40, 80, 0],
+          scale: [1, 1.15, 0.9, 1],
         }}
         transition={{
           duration: 25,
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        style={{ top: "50%", right: "10%" }}
+        style={{ top: "5%", left: "5%" }}
       />
       
       <motion.div
-        className="absolute w-[350px] h-[350px] rounded-full bg-secondary/40 dark:bg-primary/10 blur-[70px]"
+        className="absolute w-[500px] h-[500px] rounded-full bg-accent/6 dark:bg-primary-glow/10 blur-[100px]"
         animate={{
-          x: [0, 60, -30, 0],
-          y: [0, -60, 30, 0],
-          scale: [1, 1.05, 0.9, 1],
+          x: [0, -60, -30, 0],
+          y: [0, 60, 30, 0],
+          scale: [1, 0.85, 1.1, 1],
+        }}
+        transition={{
+          duration: 30,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        style={{ top: "40%", right: "5%" }}
+      />
+      
+      <motion.div
+        className="absolute w-[450px] h-[450px] rounded-full bg-secondary/50 dark:bg-accent/8 blur-[90px]"
+        animate={{
+          x: [0, 50, -25, 0],
+          y: [0, -50, 25, 0],
+          scale: [1, 1.1, 0.85, 1],
+        }}
+        transition={{
+          duration: 22,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        style={{ bottom: "5%", left: "25%" }}
+      />
+
+      {/* Additional orb for more depth */}
+      <motion.div
+        className="absolute w-[350px] h-[350px] rounded-full bg-primary/5 dark:bg-primary/8 blur-[80px]"
+        animate={{
+          x: [0, -40, 20, 0],
+          y: [0, 30, -30, 0],
+          scale: [1, 0.95, 1.05, 1],
         }}
         transition={{
           duration: 18,
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        style={{ bottom: "10%", left: "30%" }}
+        style={{ top: "60%", left: "60%" }}
       />
 
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
+      {/* Floating particles - more visible */}
+      {[...Array(8)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 rounded-full bg-primary/20 dark:bg-primary/40"
+          className="absolute w-1.5 h-1.5 rounded-full bg-primary/25 dark:bg-primary/40"
           animate={{
-            y: [0, -30, 0],
-            opacity: [0.3, 0.7, 0.3],
+            y: [0, -40, 0],
+            opacity: [0.2, 0.6, 0.2],
+            scale: [1, 1.2, 1],
           }}
           transition={{
-            duration: 3 + i * 0.5,
+            duration: 4 + i * 0.5,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: i * 0.5,
+            delay: i * 0.4,
           }}
           style={{
-            left: `${15 + i * 15}%`,
-            top: `${20 + (i % 3) * 25}%`,
+            left: `${10 + i * 11}%`,
+            top: `${15 + (i % 4) * 20}%`,
           }}
         />
       ))}
 
-      {/* Grid pattern overlay */}
+      {/* Subtle grid pattern overlay */}
       <div 
-        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.02]"
         style={{
           backgroundImage: `
             linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: "60px 60px",
+          backgroundSize: "80px 80px",
         }}
       />
 
-      {/* Radial glow at center */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(var(--primary)/0.08)_0%,_transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,_hsl(var(--primary)/0.15)_0%,_transparent_70%)]" />
+      {/* Radial glow at center - softer */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(var(--primary)/0.06)_0%,_transparent_60%)] dark:bg-[radial-gradient(ellipse_at_center,_hsl(var(--primary)/0.1)_0%,_transparent_50%)]" />
+
+      {/* Corner accent glow */}
+      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(ellipse_at_top_right,_hsl(var(--accent)/0.04)_0%,_transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top_right,_hsl(var(--accent)/0.08)_0%,_transparent_40%)]" />
     </div>
   );
 };

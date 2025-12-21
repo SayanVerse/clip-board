@@ -240,6 +240,7 @@ const Index = () => {
                   sessionCode={sessionCode}
                   onSessionChange={handleSessionChange}
                   showCreateOnly
+                  showJoinOption
                 />
               </div>
               <ClipboardInput sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
