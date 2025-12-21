@@ -69,24 +69,27 @@ export const AnimatedBackground = () => {
       />
 
       {/* Floating particles - more visible */}
-      {[...Array(8)].map((_, i) => (
+      {[...Array(12)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-1.5 h-1.5 rounded-full bg-primary/25 dark:bg-primary/40"
+          className="absolute rounded-full bg-primary/30 dark:bg-primary/50"
           animate={{
-            y: [0, -40, 0],
-            opacity: [0.2, 0.6, 0.2],
-            scale: [1, 1.2, 1],
+            y: [0, -50, 0],
+            x: [0, (i % 2 === 0 ? 15 : -15), 0],
+            opacity: [0.3, 0.8, 0.3],
+            scale: [1, 1.3, 1],
           }}
           transition={{
-            duration: 4 + i * 0.5,
+            duration: 3 + (i % 4) * 0.8,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: i * 0.4,
+            delay: i * 0.3,
           }}
           style={{
-            left: `${10 + i * 11}%`,
-            top: `${15 + (i % 4) * 20}%`,
+            width: `${4 + (i % 3) * 2}px`,
+            height: `${4 + (i % 3) * 2}px`,
+            left: `${8 + i * 7.5}%`,
+            top: `${12 + (i % 5) * 18}%`,
           }}
         />
       ))}
