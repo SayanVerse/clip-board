@@ -16,12 +16,14 @@ interface SessionManagerProps {
   onSessionChange: (sessionId: string | null, sessionCode: string | null) => void;
   initialCode?: string | null;
   showCreateOnly?: boolean;
+  showJoinOption?: boolean;
 }
 
-export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initialCode, showCreateOnly }: SessionManagerProps) => {
+export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initialCode, showCreateOnly, showJoinOption }: SessionManagerProps) => {
   const [joinCode, setJoinCode] = useState(initialCode || "");
   const [isLoading, setIsLoading] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showJoinPanel, setShowJoinPanel] = useState(false);
 
   // Auto-join when initialCode is provided
   useEffect(() => {
@@ -196,18 +198,81 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
     );
   }
 
-  if (showCreateOnly) {
+  if (showCreateOnly || showJoinOption) {
     return (
-      <Button 
-        onClick={createSession} 
-        disabled={isLoading}
-        variant="outline"
-        size="sm"
-        className="w-full"
-      >
-        <QrCode className="mr-2 h-4 w-4" />
-        Create Session Code
-      </Button>
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <Button 
+            onClick={createSession} 
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="flex-1"
+          >
+            <QrCode className="mr-2 h-4 w-4" />
+            Create Session
+          </Button>
+          {showJoinOption && (
+            <Button 
+              onClick={() => setShowJoinPanel(!showJoinPanel)} 
+              variant={showJoinPanel ? "secondary" : "outline"}
+              size="sm"
+              className="flex-1"
+            >
+              <Link2 className="mr-2 h-4 w-4" />
+              Join Session
+            </Button>
+          )}
+        </div>
+        
+        <AnimatePresence>
+          {showJoinPanel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-3 border-t border-border space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="0000"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    maxLength={4}
+                    className="text-center text-lg tracking-[0.5em] font-mono h-9"
+                  />
+                  <Button 
+                    onClick={() => setShowScanner(true)} 
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button 
+                  onClick={() => joinSession()} 
+                  disabled={isLoading || joinCode.length !== 4}
+                  className="w-full"
+                  size="sm"
+                >
+                  Join Session
+                </Button>
+              </div>
+              
+              <QRScanner 
+                open={showScanner} 
+                onClose={() => setShowScanner(false)}
+                onScan={(code) => {
+                  setShowScanner(false);
+                  joinSession(code);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     );
   }
 
