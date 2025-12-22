@@ -106,7 +106,7 @@ const Index = () => {
   const hasActiveSession = isLoggedIn || !!sessionId;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative">
       <AnimatedBackground />
       
       {/* Header */}
