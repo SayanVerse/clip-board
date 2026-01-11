@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Upload, Copy, Code2, Type, FileUp, Sparkles } from "lucide-react";
+import { Send, Upload, Copy, Code2, Type, FileUp, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { feedback } from "@/hooks/useFeedback";
 import { UploadProgress } from "./UploadProgress";
-import { detectCode } from "@/lib/codeDetection";
+import { useLanguageDetection } from "@/hooks/useLanguageDetection";
 
 interface ClipboardInputProps {
   sessionId: string | null;
@@ -30,10 +30,17 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadFileName, setUploadFileName] = useState<string | undefined>();
-  const [codeDetected, setCodeDetected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  // AI-powered language detection
+  const { 
+    language: detectedLanguage, 
+    isCode: codeDetected, 
+    isDetecting,
+    detectWithDebounce 
+  } = useLanguageDetection();
 
   useKeyboardShortcuts({
     onCtrlV: async () => {
@@ -80,7 +87,21 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
     return () => document.removeEventListener("paste", handlePaste);
   }, [sessionId, userId, deviceName, mode]);
 
-  const sendContent = async (content: string, contentType: "text" | "code" = "text") => {
+  // Trigger AI detection when code changes in code mode (auto-detect by default)
+  useEffect(() => {
+    if (mode === "code" && code.length > 30) {
+      detectWithDebounce(code, 1000);
+    }
+  }, [code, mode, detectWithDebounce]);
+
+  // Auto-update language when AI detects it in code mode
+  useEffect(() => {
+    if (mode === "code" && detectedLanguage && detectedLanguage !== "plaintext") {
+      setLanguage(detectedLanguage);
+    }
+  }, [detectedLanguage, mode]);
+
+  const sendContent = async (content: string, contentType: "text" | "code" = "text", detectedLang?: string) => {
     if (!content.trim()) return;
     if (!sessionId && !userId) {
       toast.error("No active session");
@@ -89,20 +110,22 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
 
     setIsSending(true);
     try {
+      const langToUse = contentType === "code" ? (detectedLang || language) : null;
+      
       const { error } = await supabase
         .from("clipboard_items")
         .insert({
           content_type: contentType,
           content: content,
           device_name: deviceName,
-          language: contentType === "code" ? language : null,
+          language: langToUse,
           user_id: userId || undefined,
           session_id: sessionId || undefined,
         });
 
       if (error) throw error;
 
-      toast.success(contentType === "code" ? "Code sent" : "Text sent");
+      toast.success(contentType === "code" ? `Code sent (${langToUse})` : "Text sent");
       feedback.send();
       
       if (contentType === "text") {
@@ -127,11 +150,18 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
   };
 
   const sendText = async (content?: string) => {
-    await sendContent(content || text, "text");
+    const textToSend = content || text;
+    
+    // In text mode, if code is detected, send as code with detected language
+    if (codeDetected && detectedLanguage !== "plaintext") {
+      await sendContent(textToSend, "code", detectedLanguage);
+    } else {
+      await sendContent(textToSend, "text");
+    }
   };
 
   const sendCode = async () => {
-    await sendContent(code, "code");
+    await sendContent(code, "code", language);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -179,7 +209,7 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       const folder = userId || sessionId;
       const filePath = `${folder}/${timestamp}_${sanitizedFileName}`;
       
-      // Simulate progress for better UX (Supabase doesn't provide real progress)
+      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) return prev;
@@ -221,7 +251,6 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       toast.success("File uploaded");
       feedback.send();
       
-      // Keep progress visible briefly after completion
       setTimeout(() => {
         setIsUploading(false);
         setUploadProgress(0);
@@ -247,19 +276,12 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
     }
   };
 
-  // Auto-detect code when text changes
+  // Auto-detect code when text changes in text mode
   const handleTextChange = (value: string) => {
     setText(value);
     
-    if (value.length > 30) {
-      const detection = detectCode(value);
-      setCodeDetected(detection.isCode && detection.confidence > 40);
-      
-      if (detection.isCode && detection.confidence > 40) {
-        setLanguage(detection.detectedLanguage);
-      }
-    } else {
-      setCodeDetected(false);
+    if (value.length > 50) {
+      detectWithDebounce(value, 800);
     }
   };
 
@@ -267,8 +289,10 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
     setCode(text);
     setText("");
     setMode("code");
-    setCodeDetected(false);
-    toast.success("Switched to code mode");
+    if (detectedLanguage && detectedLanguage !== "plaintext") {
+      setLanguage(detectedLanguage);
+    }
+    toast.success(`Switched to code mode (${detectedLanguage})`);
   };
 
   const copyToClipboard = async () => {
@@ -351,9 +375,9 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
                 </Button>
               )}
               
-              {/* Code detection banner */}
+              {/* AI Code detection banner */}
               <AnimatePresence>
-                {codeDetected && (
+                {(codeDetected || isDetecting) && text.length > 50 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -362,17 +386,25 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
                   >
                     <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-primary/10 border border-primary/20">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs text-primary font-medium">Code detected</span>
+                        {isDetecting ? (
+                          <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        )}
+                        <span className="text-xs text-primary font-medium">
+                          {isDetecting ? "Detecting..." : `${detectedLanguage} detected`}
+                        </span>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 text-xs text-primary hover:text-primary"
-                        onClick={switchToCodeMode}
-                      >
-                        Switch to Code Mode
-                      </Button>
+                      {codeDetected && !isDetecting && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 text-xs text-primary hover:text-primary"
+                          onClick={switchToCodeMode}
+                        >
+                          Switch to Code Mode
+                        </Button>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -382,13 +414,29 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
         </TabsContent>
 
         <TabsContent value="code" className="mt-0">
-          <CodeEditor
-            value={code}
-            onChange={setCode}
-            language={language}
-            onLanguageChange={setLanguage}
-            onSend={sendCode}
-          />
+          <div className="relative">
+            <CodeEditor
+              value={code}
+              onChange={setCode}
+              language={language}
+              onLanguageChange={setLanguage}
+              onSend={sendCode}
+            />
+            {/* Auto-detect indicator in code mode */}
+            <AnimatePresence>
+              {isDetecting && code.length > 30 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute top-1 right-24 flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-full"
+                >
+                  <Loader2 className="h-3 w-3 text-primary animate-spin" />
+                  <span className="text-xs text-primary">Detecting...</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -402,7 +450,7 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
               className="flex-1"
             >
               <Send className="mr-1.5 h-3.5 w-3.5" />
-              Send
+              {codeDetected ? `Send as ${detectedLanguage}` : "Send"}
             </Button>
             <Button
               onClick={() => fileInputRef.current?.click()}
@@ -422,7 +470,7 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
             className="flex-1"
           >
             <Code2 className="mr-1.5 h-3.5 w-3.5" />
-            Send
+            Send ({language})
           </Button>
         )}
         

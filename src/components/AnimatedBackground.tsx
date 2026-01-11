@@ -6,7 +6,8 @@ export const AnimatedBackground = () => {
   useEffect(() => {
     // Generate particle keyframes dynamically
     const style = document.createElement('style');
-    const total = 150;
+    const total = 80; // Reduced particles for subtler effect
+    const orbSize = 60; // Smaller orb
     const baseHue = 200; // Blue-ish base color
 
     let keyframes = '';
@@ -24,17 +25,17 @@ export const AnimatedBackground = () => {
             transform: rotateZ(0deg) rotateY(0deg) translateX(0px) rotateZ(0deg);
           }
           20% {
-            opacity: 0.8;
+            opacity: 0.6;
           }
           30% {
-            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(80px) rotateZ(${z}deg);
+            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize}px) rotateZ(${z}deg);
           }
           80% {
-            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(80px) rotateZ(${z}deg);
-            opacity: 0.8;
+            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize}px) rotateZ(${z}deg);
+            opacity: 0.6;
           }
           100% {
-            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(200px) rotateZ(${z}deg);
+            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize * 2.5}px) rotateZ(${z}deg);
             opacity: 0;
           }
         }
@@ -42,9 +43,9 @@ export const AnimatedBackground = () => {
 
       particleStyles += `
         .particle-orb .c:nth-child(${i}) {
-          animation: orbit${i} 14s infinite;
-          animation-delay: ${i * 0.02}s;
-          background-color: hsla(${hue}, 70%, 60%, 0.9);
+          animation: orbit${i} 20s infinite;
+          animation-delay: ${i * 0.03}s;
+          background-color: hsla(${hue}, 60%, 55%, 0.7);
         }
       `;
     }
@@ -58,7 +59,7 @@ export const AnimatedBackground = () => {
   }, []);
 
   // Generate particles
-  const particles = Array.from({ length: 150 }, (_, i) => (
+  const particles = Array.from({ length: 80 }, (_, i) => (
     <div key={i} className="c" />
   ));
 
@@ -77,7 +78,7 @@ export const AnimatedBackground = () => {
             height: 0,
             transformStyle: 'preserve-3d',
             perspective: '1000px',
-            animation: 'orb-rotate 14s infinite linear',
+            animation: 'orb-rotate 20s infinite linear',
           }}
         >
           {particles}
@@ -85,7 +86,7 @@ export const AnimatedBackground = () => {
       </div>
 
       {/* Subtle overlay for better readability */}
-      <div className="absolute inset-0 bg-background/40 dark:bg-background/60" />
+      <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
 
       {/* CSS for orb animation */}
       <style>{`
