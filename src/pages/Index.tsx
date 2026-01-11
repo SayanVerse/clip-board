@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { SessionManager } from "@/components/SessionManager";
 import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
+import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SessionTimer } from "@/components/SessionTimer";
@@ -109,32 +110,12 @@ const Index = () => {
     <div className="min-h-screen flex flex-col relative">
       <AnimatedBackground />
       
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-primary rounded-lg">
-              <Clipboard className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm">Clip-Board</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {sessionId && sessionStart && (
-              <SessionTimer startTime={sessionStart} />
-            )}
-            {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-full">
-                <Cloud className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-medium text-primary">Synced</span>
-              </div>
-            )}
-            <KeyboardShortcuts />
-            <ThemeToggle />
-            <AuthButton />
-          </div>
-        </div>
-      </header>
+      {/* Mobile & Desktop Header */}
+      <MobileNav 
+        sessionId={sessionId} 
+        sessionStart={sessionStart} 
+        isLoggedIn={isLoggedIn} 
+      />
 
       <main className="flex-1">
         {!hasActiveSession ? (
