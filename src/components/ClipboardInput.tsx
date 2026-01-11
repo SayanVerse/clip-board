@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Upload, Copy, Code2, Type, FileUp } from "lucide-react";
+import { Send, Upload, Copy, Code2, Type, FileUp, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { feedback } from "@/hooks/useFeedback";
+import { UploadProgress } from "./UploadProgress";
+import { detectCode } from "@/lib/codeDetection";
 
 interface ClipboardInputProps {
   sessionId: string | null;
@@ -25,6 +27,10 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
   const [mode, setMode] = useState<"text" | "code">("text");
   const [isSending, setIsSending] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFileName, setUploadFileName] = useState<string | undefined>();
+  const [codeDetected, setCodeDetected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -163,11 +169,23 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
     }
 
     setIsSending(true);
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadFileName(file.name);
+    
     try {
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const folder = userId || sessionId;
       const filePath = `${folder}/${timestamp}_${sanitizedFileName}`;
+      
+      // Simulate progress for better UX (Supabase doesn't provide real progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 15;
+        });
+      }, 200);
       
       const { error: uploadError } = await supabase.storage
         .from("clipboard-files")
@@ -176,7 +194,11 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
           upsert: false
         });
 
+      clearInterval(progressInterval);
+      
       if (uploadError) throw uploadError;
+
+      setUploadProgress(95);
 
       const { data: { publicUrl } } = supabase.storage
         .from("clipboard-files")
@@ -195,8 +217,16 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
 
       if (insertError) throw insertError;
 
+      setUploadProgress(100);
       toast.success("File uploaded");
       feedback.send();
+      
+      // Keep progress visible briefly after completion
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+        setUploadFileName(undefined);
+      }, 1500);
       
       if (sessionId) {
         await supabase
@@ -209,9 +239,36 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       const errorMessage = error instanceof Error ? error.message : "Failed to upload";
       toast.error(errorMessage);
       feedback.error();
+      setIsUploading(false);
+      setUploadProgress(0);
+      setUploadFileName(undefined);
     } finally {
       setIsSending(false);
     }
+  };
+
+  // Auto-detect code when text changes
+  const handleTextChange = (value: string) => {
+    setText(value);
+    
+    if (value.length > 30) {
+      const detection = detectCode(value);
+      setCodeDetected(detection.isCode && detection.confidence > 40);
+      
+      if (detection.isCode && detection.confidence > 40) {
+        setLanguage(detection.detectedLanguage);
+      }
+    } else {
+      setCodeDetected(false);
+    }
+  };
+
+  const switchToCodeMode = () => {
+    setCode(text);
+    setText("");
+    setMode("code");
+    setCodeDetected(false);
+    toast.success("Switched to code mode");
   };
 
   const copyToClipboard = async () => {
@@ -274,7 +331,7 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
                 ref={textareaRef}
                 placeholder="Type or paste text..."
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => handleTextChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -293,6 +350,33 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               )}
+              
+              {/* Code detection banner */}
+              <AnimatePresence>
+                {codeDetected && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute bottom-2 left-2 right-2"
+                  >
+                    <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs text-primary font-medium">Code detected</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs text-primary hover:text-primary"
+                        onClick={switchToCodeMode}
+                      >
+                        Switch to Code Mode
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </TabsContent>
@@ -353,6 +437,18 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
           }}
         />
       </div>
+      
+      {/* Upload Progress */}
+      <UploadProgress
+        isUploading={isUploading}
+        progress={uploadProgress}
+        fileName={uploadFileName}
+        onCancel={() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadFileName(undefined);
+        }}
+      />
     </Card>
   );
 };

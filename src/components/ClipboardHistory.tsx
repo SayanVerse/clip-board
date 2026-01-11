@@ -244,8 +244,8 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                   transition={{ duration: 0.15 }}
                   layout
                 >
-                  <div className={`group p-3 rounded-lg border bg-card hover:bg-accent/30 transition-all duration-100 ${item.is_pinned ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
-                    <div className="flex items-start gap-3">
+                    <div className={`group p-3 rounded-lg border bg-card hover:bg-accent/30 transition-all duration-100 overflow-hidden ${item.is_pinned ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
+                    <div className="flex items-start gap-3 min-w-0">
                       <div className={`p-1.5 rounded shrink-0 ${item.is_pinned ? 'bg-primary/20' : 'bg-muted'}`}>
                         {item.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
                         {!item.is_pinned && item.content_type === "text" && <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -253,7 +253,7 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                         {!item.is_pinned && item.content_type === "file" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}
                       </div>
                       
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] text-muted-foreground">{item.device_name || "Unknown"}</span>
                           <span className="text-[10px] text-muted-foreground">·</span>
@@ -266,12 +266,12 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                         </div>
                         
                         {item.content_type === "text" && (
-                          <p className="text-sm break-words line-clamp-2">{item.content}</p>
+                          <p className="text-sm break-all whitespace-pre-wrap line-clamp-2 max-w-full overflow-hidden">{item.content}</p>
                         )}
                         
                         {item.content_type === "code" && (
                           expandedCode === item.id ? (
-                            <div className="rounded overflow-hidden border border-border mt-1">
+                            <div className="rounded overflow-hidden border border-border mt-1 max-w-full">
                               <Editor
                                 height="150px"
                                 language={item.language || "plaintext"}
@@ -292,7 +292,7 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                           ) : (
                             <button
                               onClick={() => setExpandedCode(item.id)}
-                              className="text-xs text-left w-full p-2 rounded bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2"
+                              className="text-xs text-left w-full p-2 rounded bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2 break-all whitespace-pre-wrap overflow-hidden max-w-full"
                             >
                               {item.content}
                             </button>
