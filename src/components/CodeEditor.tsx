@@ -12,6 +12,7 @@ interface CodeEditorProps {
 }
 
 const LANGUAGES = [
+  { value: "auto", label: "✨ Auto Detect" },
   { value: "javascript", label: "JavaScript" },
   { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
@@ -70,7 +71,7 @@ export const CodeEditor = ({ value, onChange, language, onLanguageChange, onSend
       >
         <Editor
           height="300px"
-          language={language}
+          language={language === "auto" ? "javascript" : language}
           value={value}
           onChange={(newValue) => onChange(newValue || "")}
           onMount={(editor, monaco) => {
