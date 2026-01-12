@@ -52,8 +52,8 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
           } else {
             setCode(clipboardText);
           }
-          toast.success("Pasted from clipboard");
-          await sendContent(clipboardText, mode === "code" ? "code" : "text");
+          toast.success("Pasted from clipboard - press Ctrl+Enter to send");
+          // Don't auto-send, let AI detection run first
         }
       } catch (error) {
         console.error("Failed to read clipboard:", error);
@@ -77,9 +77,14 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       if (document.activeElement === textareaRef.current) return;
       
       const clipboardText = e.clipboardData?.getData("text");
-      if (clipboardText && mode === "text") {
-        setText(clipboardText);
-        await sendText(clipboardText);
+      if (clipboardText) {
+        if (mode === "text") {
+          setText(clipboardText);
+        } else {
+          setCode(clipboardText);
+        }
+        toast.success("Pasted - press Ctrl+Enter to send");
+        // Don't auto-send, let AI detection complete first
       }
     };
 
