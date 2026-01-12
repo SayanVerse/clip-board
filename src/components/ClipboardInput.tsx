@@ -23,7 +23,7 @@ interface ClipboardInputProps {
 export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInputProps) => {
   const [text, setText] = useState("");
   const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("auto");
   const [mode, setMode] = useState<"text" | "code">("text");
   const [isSending, setIsSending] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -87,19 +87,12 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
     return () => document.removeEventListener("paste", handlePaste);
   }, [sessionId, userId, deviceName, mode]);
 
-  // Trigger AI detection when code changes in code mode (auto-detect by default)
+  // Trigger AI detection when code changes in code mode with auto-detect enabled
   useEffect(() => {
-    if (mode === "code" && code.length > 30) {
+    if (mode === "code" && language === "auto" && code.length > 30) {
       detectWithDebounce(code, 1000);
     }
-  }, [code, mode, detectWithDebounce]);
-
-  // Auto-update language when AI detects it in code mode
-  useEffect(() => {
-    if (mode === "code" && detectedLanguage && detectedLanguage !== "plaintext") {
-      setLanguage(detectedLanguage);
-    }
-  }, [detectedLanguage, mode]);
+  }, [code, mode, language, detectWithDebounce]);
 
   const sendContent = async (content: string, contentType: "text" | "code" = "text", detectedLang?: string) => {
     if (!content.trim()) return;
@@ -110,7 +103,17 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
 
     setIsSending(true);
     try {
-      const langToUse = contentType === "code" ? (detectedLang || language) : null;
+      // For code mode with auto-detect, use detected language or fallback to plaintext
+      let langToUse: string | null = null;
+      if (contentType === "code") {
+        if (detectedLang && detectedLang !== "auto") {
+          langToUse = detectedLang;
+        } else if (language === "auto") {
+          langToUse = detectedLanguage || "plaintext";
+        } else {
+          langToUse = language;
+        }
+      }
       
       const { error } = await supabase
         .from("clipboard_items")
@@ -161,7 +164,9 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
   };
 
   const sendCode = async () => {
-    await sendContent(code, "code", language);
+    // Use detected language if auto-detect is enabled
+    const finalLang = language === "auto" ? (detectedLanguage || "plaintext") : language;
+    await sendContent(code, "code", finalLang);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -422,17 +427,26 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
               onLanguageChange={setLanguage}
               onSend={sendCode}
             />
-            {/* Auto-detect indicator in code mode */}
+            {/* Auto-detect indicator in code mode when auto is selected */}
             <AnimatePresence>
-              {isDetecting && code.length > 30 && (
+              {language === "auto" && code.length > 30 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="absolute top-1 right-24 flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-full"
                 >
-                  <Loader2 className="h-3 w-3 text-primary animate-spin" />
-                  <span className="text-xs text-primary">Detecting...</span>
+                  {isDetecting ? (
+                    <>
+                      <Loader2 className="h-3 w-3 text-primary animate-spin" />
+                      <span className="text-xs text-primary">Detecting...</span>
+                    </>
+                  ) : detectedLanguage ? (
+                    <>
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      <span className="text-xs text-primary">{detectedLanguage}</span>
+                    </>
+                  ) : null}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -470,7 +484,7 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
             className="flex-1"
           >
             <Code2 className="mr-1.5 h-3.5 w-3.5" />
-            Send ({language})
+            Send ({language === "auto" ? (detectedLanguage || "auto") : language})
           </Button>
         )}
         
