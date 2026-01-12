@@ -6,8 +6,8 @@ export const AnimatedBackground = () => {
   useEffect(() => {
     // Generate particle keyframes dynamically
     const style = document.createElement('style');
-    const total = 80; // Reduced particles for subtler effect
-    const orbSize = 60; // Smaller orb
+    const total = 120; // More particles for better visibility
+    const orbSize = 80; // Larger orb for better visibility on all screens
     const baseHue = 200; // Blue-ish base color
 
     let keyframes = '';
@@ -25,17 +25,17 @@ export const AnimatedBackground = () => {
             transform: rotateZ(0deg) rotateY(0deg) translateX(0px) rotateZ(0deg);
           }
           20% {
-            opacity: 0.6;
+            opacity: 0.8;
           }
           30% {
             transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize}px) rotateZ(${z}deg);
           }
           80% {
             transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize}px) rotateZ(${z}deg);
-            opacity: 0.6;
+            opacity: 0.8;
           }
           100% {
-            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize * 2.5}px) rotateZ(${z}deg);
+            transform: rotateZ(-${z}deg) rotateY(${y}deg) translateX(${orbSize * 3}px) rotateZ(${z}deg);
             opacity: 0;
           }
         }
@@ -43,9 +43,9 @@ export const AnimatedBackground = () => {
 
       particleStyles += `
         .particle-orb .c:nth-child(${i}) {
-          animation: orbit${i} 20s infinite;
-          animation-delay: ${i * 0.03}s;
-          background-color: hsla(${hue}, 60%, 55%, 0.7);
+          animation: orbit${i} 18s infinite;
+          animation-delay: ${i * 0.025}s;
+          background-color: hsla(${hue}, 70%, 60%, 0.9);
         }
       `;
     }
@@ -59,16 +59,16 @@ export const AnimatedBackground = () => {
   }, []);
 
   // Generate particles
-  const particles = Array.from({ length: 80 }, (_, i) => (
+  const particles = Array.from({ length: 120 }, (_, i) => (
     <div key={i} className="c" />
   ));
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
-      {/* Dark gradient base */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-black dark:via-gray-950 dark:to-black" />
+      {/* Gradient base with better visibility */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-100/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/50" />
       
-      {/* Particle Orb Container */}
+      {/* Particle Orb Container - centered and visible on all screens */}
       <div className="particle-orb absolute inset-0 flex items-center justify-center">
         <div 
           ref={wrapRef}
@@ -78,15 +78,34 @@ export const AnimatedBackground = () => {
             height: 0,
             transformStyle: 'preserve-3d',
             perspective: '1000px',
-            animation: 'orb-rotate 20s infinite linear',
+            animation: 'orb-rotate 25s infinite linear',
           }}
         >
           {particles}
         </div>
       </div>
 
-      {/* Subtle overlay for better readability */}
-      <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
+      {/* Lighter overlay for glassmorphism to show through */}
+      <div className="absolute inset-0 bg-background/30 dark:bg-background/40" />
+
+      {/* Additional floating particles for mobile visibility */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 20 }, (_, i) => (
+          <div
+            key={`float-${i}`}
+            className="absolute rounded-full animate-pulse"
+            style={{
+              width: `${Math.random() * 4 + 2}px`,
+              height: `${Math.random() * 4 + 2}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              backgroundColor: `hsla(${200 + Math.random() * 60}, 70%, 60%, ${0.3 + Math.random() * 0.3})`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 3}s`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* CSS for orb animation */}
       <style>{`
@@ -98,14 +117,22 @@ export const AnimatedBackground = () => {
         
         .particle-orb .c {
           position: absolute;
-          width: 2px;
-          height: 2px;
+          width: 3px;
+          height: 3px;
           border-radius: 50%;
           opacity: 0;
+          box-shadow: 0 0 6px currentColor;
         }
         
         .particle-orb .wrap {
           position: relative;
+        }
+        
+        @media (max-width: 768px) {
+          .particle-orb .c {
+            width: 4px;
+            height: 4px;
+          }
         }
       `}</style>
     </div>
