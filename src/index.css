@@ -93,10 +93,18 @@
 
 @layer utilities {
   .glass {
-    @apply bg-card/80 backdrop-blur-xl border border-border;
+    @apply bg-card/60 backdrop-blur-xl border border-border/50 shadow-lg;
+  }
+  
+  .glass-subtle {
+    @apply bg-card/40 backdrop-blur-lg border border-border/30;
   }
   
   .glass-hover {
-    @apply transition-all duration-200 hover:bg-card hover:shadow-lg;
+    @apply transition-all duration-200 hover:bg-card/80 hover:shadow-xl hover:border-border;
+  }
+  
+  .glass-card {
+    @apply bg-card/50 backdrop-blur-md border border-border/40 shadow-md;
   }
 }

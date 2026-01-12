@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import { Editor } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { feedback } from "@/hooks/useFeedback";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ClipboardItem {
   id: string;
@@ -33,12 +34,20 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<ClipboardItem | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { theme } = useTheme();
 
   useEffect(() => {
     loadHistory();
     const unsubscribe = subscribeToChanges();
+    
+    // Auto-delete old items for logged-in users (older than 1 week)
+    if (userId) {
+      deleteOldItems();
+    }
+    
     return unsubscribe;
   }, [sessionId, userId]);
 
@@ -71,6 +80,28 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       toast.error("Failed to load history");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deleteOldItems = async () => {
+    if (!userId) return;
+    
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const { error } = await supabase
+        .from("clipboard_items")
+        .delete()
+        .eq("user_id", userId)
+        .eq("is_pinned", false) // Don't delete pinned items
+        .lt("created_at", oneWeekAgo.toISOString());
+
+      if (error) {
+        console.error("Error deleting old items:", error);
+      }
+    } catch (error) {
+      console.error("Error in auto-cleanup:", error);
     }
   };
 
@@ -113,7 +144,11 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
   };
 
   const deleteItem = async (id: string) => {
+    setDeletingId(id);
     try {
+      // Wait for animation to start
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const { error } = await supabase
         .from("clipboard_items")
         .delete()
@@ -123,6 +158,8 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       toast.success("Deleted");
     } catch (error) {
       toast.error("Failed to delete");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -190,22 +227,39 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
     return date.toLocaleDateString();
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const isLongContent = (content?: string) => {
+    if (!content) return false;
+    return content.length > 200 || content.split('\n').length > 4;
+  };
+
   if (isLoading) {
     return <HistorySkeleton />;
   }
 
   return (
-    <Card className="p-4 md:p-5 border border-border h-full">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-4 md:p-6 border border-border/50 h-full glass">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-semibold">History</h3>
-          <p className="text-xs text-muted-foreground">{items.length} items</p>
+          <h3 className="font-semibold text-base">Clipboard History</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{items.length} items {userId && <span className="text-primary">• Auto-cleanup after 7 days</span>}</p>
         </div>
         <div className="flex gap-1">
           <Button 
             variant="ghost" 
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-full"
             onClick={loadHistory}
           >
             <RefreshCw className="h-4 w-4" />
@@ -214,103 +268,178 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-xs text-muted-foreground hover:text-destructive"
+              className="text-xs text-muted-foreground hover:text-destructive rounded-full"
               onClick={clearAll}
             >
-              Clear
+              Clear All
             </Button>
           )}
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-280px)] lg:h-[calc(100vh-200px)]">
+      <ScrollArea className="h-[calc(100vh-280px)] lg:h-[calc(100vh-220px)]">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="p-3 rounded-full bg-muted mb-3">
-              <FileText className="h-6 w-6 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="p-4 rounded-full bg-muted/50 mb-4">
+              <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">No items yet</p>
-            <p className="text-xs text-muted-foreground">Start by sending text or files</p>
+            <p className="text-sm text-muted-foreground font-medium">No items yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Start by sending text, code, or files</p>
           </div>
         ) : (
-          <div className="space-y-2 pr-3">
+          <div className="space-y-3 pr-3">
             <AnimatePresence mode="popLayout">
               {items.map((item) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ 
+                    opacity: deletingId === item.id ? 0 : 1, 
+                    y: 0, 
+                    scale: deletingId === item.id ? 0.8 : 1,
+                    x: deletingId === item.id ? 100 : 0
+                  }}
+                  exit={{ opacity: 0, scale: 0.8, x: 100 }}
+                  transition={{ 
+                    duration: 0.25,
+                    ease: [0.4, 0, 0.2, 1]
+                  }}
                   layout
                 >
-                    <div className={`group p-3 rounded-lg border bg-card hover:bg-accent/30 transition-all duration-100 overflow-hidden ${item.is_pinned ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
+                  <div className={`group p-4 rounded-2xl border backdrop-blur-md transition-all duration-200 overflow-hidden ${
+                    item.is_pinned 
+                      ? 'border-primary/30 bg-primary/5 shadow-lg shadow-primary/5' 
+                      : 'border-border/50 bg-card/60 hover:bg-card/80 hover:border-border'
+                  }`}>
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className={`p-1.5 rounded shrink-0 ${item.is_pinned ? 'bg-primary/20' : 'bg-muted'}`}>
-                        {item.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
-                        {!item.is_pinned && item.content_type === "text" && <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {!item.is_pinned && item.content_type === "code" && <Code2 className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {!item.is_pinned && item.content_type === "file" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}
+                      {/* Icon */}
+                      <div className={`p-2 rounded-xl shrink-0 ${
+                        item.is_pinned ? 'bg-primary/15' : 'bg-muted/60'
+                      }`}>
+                        {item.is_pinned && <Pin className="h-4 w-4 text-primary" />}
+                        {!item.is_pinned && item.content_type === "text" && <FileText className="h-4 w-4 text-muted-foreground" />}
+                        {!item.is_pinned && item.content_type === "code" && <Code2 className="h-4 w-4 text-muted-foreground" />}
+                        {!item.is_pinned && item.content_type === "file" && <Download className="h-4 w-4 text-muted-foreground" />}
                       </div>
                       
+                      {/* Content */}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] text-muted-foreground">{item.device_name || "Unknown"}</span>
-                          <span className="text-[10px] text-muted-foreground">·</span>
-                          <span className="text-[10px] text-muted-foreground">{formatTime(item.created_at)}</span>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[11px] font-medium text-muted-foreground">{item.device_name || "Unknown"}</span>
+                          <span className="text-[10px] text-muted-foreground/60">•</span>
+                          <span className="text-[11px] text-muted-foreground/80">{formatTime(item.created_at)}</span>
                           {item.content_type === "code" && item.language && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wide">
                               {item.language}
                             </span>
                           )}
                         </div>
                         
+                        {/* Text Content with expand/collapse */}
                         {item.content_type === "text" && (
-                          <p className="text-sm break-all whitespace-pre-wrap line-clamp-2 max-w-full overflow-hidden">{item.content}</p>
-                        )}
-                        
-                        {item.content_type === "code" && (
-                          expandedCode === item.id ? (
-                            <div className="rounded overflow-hidden border border-border mt-1 max-w-full">
-                              <Editor
-                                height="150px"
-                                language={item.language || "plaintext"}
-                                value={item.content || ""}
-                                theme={theme === "dark" ? "vs-dark" : "light"}
-                                options={{
-                                  readOnly: true,
-                                  minimap: { enabled: false },
-                                  fontSize: 11,
-                                  lineNumbers: "off",
-                                  scrollBeyondLastLine: false,
-                                  automaticLayout: true,
-                                  wordWrap: "on",
-                                  padding: { top: 8, bottom: 8 },
-                                }}
-                              />
+                          <Collapsible open={expandedItems.has(item.id)}>
+                            <div className="relative">
+                              <p className={`text-sm break-all whitespace-pre-wrap max-w-full overflow-hidden ${
+                                !expandedItems.has(item.id) && isLongContent(item.content) ? 'line-clamp-3' : ''
+                              }`}>
+                                {item.content}
+                              </p>
+                              {isLongContent(item.content) && (
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-primary hover:text-primary mt-1"
+                                    onClick={() => toggleExpand(item.id)}
+                                  >
+                                    {expandedItems.has(item.id) ? (
+                                      <>
+                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                        Collapse
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                        Expand
+                                      </>
+                                    )}
+                                  </Button>
+                                </CollapsibleTrigger>
+                              )}
                             </div>
-                          ) : (
-                            <button
-                              onClick={() => setExpandedCode(item.id)}
-                              className="text-xs text-left w-full p-2 rounded bg-muted/50 hover:bg-muted transition-colors font-mono line-clamp-2 break-all whitespace-pre-wrap overflow-hidden max-w-full"
-                            >
-                              {item.content}
-                            </button>
-                          )
+                          </Collapsible>
                         )}
                         
+                        {/* Code Content with expand/collapse */}
+                        {item.content_type === "code" && (
+                          <Collapsible open={expandedCode === item.id || expandedItems.has(item.id)}>
+                            {expandedCode === item.id ? (
+                              <div className="rounded-xl overflow-hidden border border-border/50 mt-2 max-w-full">
+                                <Editor
+                                  height="180px"
+                                  language={item.language || "plaintext"}
+                                  value={item.content || ""}
+                                  theme={theme === "dark" ? "vs-dark" : "light"}
+                                  options={{
+                                    readOnly: true,
+                                    minimap: { enabled: false },
+                                    fontSize: 12,
+                                    lineNumbers: "off",
+                                    scrollBeyondLastLine: false,
+                                    automaticLayout: true,
+                                    wordWrap: "on",
+                                    padding: { top: 12, bottom: 12 },
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <button
+                                  onClick={() => setExpandedCode(item.id)}
+                                  className={`text-xs text-left w-full p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors font-mono break-all whitespace-pre-wrap overflow-hidden max-w-full border border-border/30 ${
+                                    !expandedItems.has(item.id) ? 'line-clamp-3' : ''
+                                  }`}
+                                >
+                                  {item.content}
+                                </button>
+                                {isLongContent(item.content) && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-primary hover:text-primary mt-1"
+                                    onClick={() => toggleExpand(item.id)}
+                                  >
+                                    {expandedItems.has(item.id) ? (
+                                      <>
+                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                        Collapse
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                        Expand
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </Collapsible>
+                        )}
+                        
+                        {/* File Content */}
                         {item.content_type === "file" && (
                           <>
                             <p className="text-sm font-medium truncate">{item.file_name}</p>
                             {getFileType(item.file_name) === 'image' && (
                               <div 
-                                className="relative rounded overflow-hidden cursor-pointer mt-2 group/img"
+                                className="relative rounded-xl overflow-hidden cursor-pointer mt-3 group/img border border-border/30"
                                 onClick={() => setPreviewFile(item)}
                               >
                                 <img 
                                   src={item.file_url} 
                                   alt={item.file_name} 
-                                  className="w-full h-32 object-cover"
+                                  className="w-full h-36 object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                                   <Maximize2 className="h-5 w-5 text-white" />
@@ -321,15 +450,16 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                         )}
                       </div>
                       
-                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Action Buttons */}
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {(item.content_type === "text" || item.content_type === "code") && (
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => copyText(item.content!)}
-                            className="h-7 w-7"
+                            className="h-8 w-8 rounded-full hover:bg-primary/10"
                           >
-                            <Copy className="h-3.5 w-3.5" />
+                            <Copy className="h-4 w-4" />
                           </Button>
                         )}
                         {item.content_type === "file" && (
@@ -337,26 +467,26 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                             variant="ghost"
                             size="icon"
                             onClick={() => window.open(item.file_url, "_blank")}
-                            className="h-7 w-7"
+                            className="h-8 w-8 rounded-full hover:bg-primary/10"
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            <Download className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => togglePin(item.id, item.is_pinned || false)}
-                          className={`h-7 w-7 ${item.is_pinned ? 'text-primary' : ''}`}
+                          className={`h-8 w-8 rounded-full ${item.is_pinned ? 'text-primary hover:bg-primary/10' : 'hover:bg-muted'}`}
                         >
-                          {item.is_pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                          {item.is_pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteItem(item.id)}
-                          className="h-7 w-7 hover:text-destructive"
+                          className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -369,29 +499,29 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       </ScrollArea>
 
       <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 rounded-2xl overflow-hidden">
           <div className="relative">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur"
+              className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur rounded-full"
               onClick={() => setPreviewFile(null)}
             >
               <X className="h-4 w-4" />
             </Button>
             
             {previewFile && (
-              <div className="w-full overflow-auto p-4">
+              <div className="w-full overflow-auto p-6">
                 {getFileType(previewFile.file_name) === 'image' ? (
                   <img 
                     src={previewFile.file_url} 
                     alt={previewFile.file_name}
-                    className="w-full h-auto rounded-lg"
+                    className="w-full h-auto rounded-xl"
                   />
                 ) : getFileType(previewFile.file_name) === 'pdf' ? (
                   <iframe
                     src={previewFile.file_url}
-                    className="w-full h-[80vh] rounded-lg"
+                    className="w-full h-[80vh] rounded-xl"
                     title={previewFile.file_name}
                   />
                 ) : null}

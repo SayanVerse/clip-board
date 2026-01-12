@@ -432,24 +432,24 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
               onLanguageChange={setLanguage}
               onSend={sendCode}
             />
-            {/* Auto-detect indicator in code mode when auto is selected */}
+            {/* Auto-detect indicator below the code editor */}
             <AnimatePresence>
               {language === "auto" && code.length > 30 && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute top-1 right-24 flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-full"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20 w-fit"
                 >
                   {isDetecting ? (
                     <>
-                      <Loader2 className="h-3 w-3 text-primary animate-spin" />
-                      <span className="text-xs text-primary">Detecting...</span>
+                      <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                      <span className="text-xs text-primary font-medium">Detecting language...</span>
                     </>
                   ) : detectedLanguage ? (
                     <>
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      <span className="text-xs text-primary">{detectedLanguage}</span>
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs text-primary font-medium">Detected: {detectedLanguage}</span>
                     </>
                   ) : null}
                 </motion.div>

@@ -9,7 +9,7 @@ import { SessionTimer } from "@/components/SessionTimer";
 import { AuthButton } from "@/components/AuthButton";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { useAuth } from "@/hooks/useAuth";
-import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud } from "lucide-react";
+import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 const getDeviceName = () => {
@@ -125,45 +125,60 @@ const Index = () => {
               className="text-center max-w-2xl mx-auto mb-16"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-subtle mb-6">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-muted-foreground">AI-Powered Code Detection</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5">
                 Share clipboard
-                <span className="text-primary"> instantly</span>
+                <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent"> instantly</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
                 {isLoggedIn 
                   ? "Sign in with Google to sync across all your devices automatically."
                   : "Sync text, code, and files across all your devices with a simple 4-digit code."}
               </p>
               
               <div className="max-w-md mx-auto">
-                <SessionManager
-                  sessionId={sessionId}
-                  sessionCode={sessionCode}
-                  onSessionChange={handleSessionChange}
-                  initialCode={urlCode}
-                />
+                <div className="glass rounded-2xl p-6">
+                  <SessionManager
+                    sessionId={sessionId}
+                    sessionCode={sessionCode}
+                    onSessionChange={handleSessionChange}
+                    initialCode={urlCode}
+                  />
+                </div>
               </div>
             </motion.div>
 
             {/* Features */}
             <motion.div 
-              className="grid md:grid-cols-3 gap-6 mb-16"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25, delay: 0.1 }}
+              className="grid md:grid-cols-3 gap-5 mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
             >
               {[
-                { icon: Shield, title: "Secure", desc: "End-to-end encryption, auto-expiring sessions" },
-                { icon: Zap, title: "Instant", desc: "Real-time sync with sub-second latency" },
-                { icon: Monitor, title: "Universal", desc: "Works on any device with a browser" },
-              ].map((feature) => (
-                <div key={feature.title} className="p-6 rounded-xl border border-border bg-card">
-                  <feature.icon className="h-8 w-8 text-primary mb-4" />
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                </div>
+                { icon: Shield, title: "Secure & Private", desc: "Auto-expiring sessions with secure data handling" },
+                { icon: Zap, title: "Real-time Sync", desc: "Instant sync with sub-second latency across devices" },
+                { icon: Monitor, title: "Works Everywhere", desc: "Universal compatibility with any modern browser" },
+              ].map((feature, i) => (
+                <motion.div 
+                  key={feature.title} 
+                  className="group p-6 rounded-2xl glass glass-hover cursor-default"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 + i * 0.05 }}
+                >
+                  <div className="p-3 rounded-xl bg-primary/10 w-fit mb-4 group-hover:bg-primary/15 transition-colors">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-foreground">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
+                </motion.div>
               ))}
             </motion.div>
 
@@ -171,25 +186,24 @@ const Index = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.25, delay: 0.15 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="glass rounded-2xl p-8"
             >
-              <h2 className="text-2xl font-semibold text-center mb-8">How it works</h2>
+              <h2 className="text-2xl font-semibold text-center mb-10">How it works</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
                 {[
-                  { step: "1", title: "Create", desc: "Generate a session" },
-                  { step: "2", title: "Share", desc: "Send the code" },
-                  { step: "3", title: "Sync", desc: "Start sharing" },
+                  { step: "1", title: "Create Session", desc: "Generate a unique 4-digit code" },
+                  { step: "2", title: "Share Code", desc: "Send the code to your other devices" },
+                  { step: "3", title: "Start Syncing", desc: "Copy and paste across devices instantly" },
                 ].map((item, index, arr) => (
-                  <div key={item.step} className="relative flex flex-col items-center">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-3 mx-auto">
-                        {item.step}
-                      </div>
-                      <h4 className="font-medium mb-1">{item.title}</h4>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  <div key={item.step} className="relative flex flex-col items-center text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center font-bold text-xl mb-4 shadow-lg shadow-primary/20">
+                      {item.step}
                     </div>
+                    <h4 className="font-semibold mb-2">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
                     {index < arr.length - 1 && (
-                      <ArrowRight className="h-5 w-5 text-muted-foreground absolute -right-6 top-5 hidden md:block" />
+                      <ArrowRight className="h-5 w-5 text-muted-foreground/50 absolute -right-4 top-5 hidden md:block" />
                     )}
                   </div>
                 ))}
@@ -197,55 +211,94 @@ const Index = () => {
             </motion.div>
           </div>
         ) : (
-          // Active session view - Two column layout
-          <div className="container max-w-6xl mx-auto px-4 py-6">
+          // Active session view - Professional two column layout
+          <div className="container max-w-7xl mx-auto px-4 py-6 lg:py-8">
             {isLoggedIn && !sessionId ? (
-          // Logged-in user auto-sync mode
-          <div className="grid lg:grid-cols-[380px_1fr] gap-6">
-            <div className="space-y-6">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Cloud className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Auto-Sync Mode</p>
-                    <p className="text-xs text-muted-foreground">Synced across all your devices</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  All clipboard items are automatically synced to devices where you're signed in with the same Google account.
-                </p>
-                <SessionManager
-                  sessionId={sessionId}
-                  sessionCode={sessionCode}
-                  onSessionChange={handleSessionChange}
-                  showCreateOnly
-                  showJoinOption
-                />
-              </div>
-              <ClipboardInput sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
-            </div>
-            
-            <div>
-              <ClipboardHistory sessionId={sessionId} userId={user?.id} />
-            </div>
-          </div>
-            ) : (
-              // Session-based mode
-              <div className="grid lg:grid-cols-[380px_1fr] gap-6">
-                <div className="space-y-6">
-                  <SessionManager
-                    sessionId={sessionId}
-                    sessionCode={sessionCode}
-                    onSessionChange={handleSessionChange}
-                  />
-                  <ClipboardInput sessionId={sessionId!} deviceName={deviceName} />
+              // Logged-in user auto-sync mode
+              <div className="grid lg:grid-cols-[420px_1fr] gap-6">
+                {/* Left Panel */}
+                <div className="space-y-5">
+                  {/* Auto-Sync Status Card */}
+                  <motion.div 
+                    className="glass rounded-2xl p-5"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary-glow/10">
+                        <Cloud className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">Auto-Sync Mode</p>
+                        <p className="text-xs text-muted-foreground">Synced across all your devices</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                      All clipboard items are automatically synced to devices where you're signed in. Items older than 7 days are automatically cleaned up.
+                    </p>
+                    <SessionManager
+                      sessionId={sessionId}
+                      sessionCode={sessionCode}
+                      onSessionChange={handleSessionChange}
+                      showCreateOnly
+                      showJoinOption
+                    />
+                  </motion.div>
+                  
+                  {/* Input Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <ClipboardInput sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
+                  </motion.div>
                 </div>
                 
-                <div>
-                  <ClipboardHistory sessionId={sessionId!} />
+                {/* Right Panel - History */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                >
+                  <ClipboardHistory sessionId={sessionId} userId={user?.id} />
+                </motion.div>
+              </div>
+            ) : (
+              // Session-based mode
+              <div className="grid lg:grid-cols-[420px_1fr] gap-6">
+                {/* Left Panel */}
+                <div className="space-y-5">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <SessionManager
+                      sessionId={sessionId}
+                      sessionCode={sessionCode}
+                      onSessionChange={handleSessionChange}
+                    />
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <ClipboardInput sessionId={sessionId!} deviceName={deviceName} />
+                  </motion.div>
                 </div>
+                
+                {/* Right Panel - History */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                >
+                  <ClipboardHistory sessionId={sessionId!} />
+                </motion.div>
               </div>
             )}
           </div>
@@ -253,10 +306,10 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-4 mt-auto">
-        <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-muted-foreground">
+      <footer className="border-t border-border/50 py-5 mt-auto backdrop-blur-sm">
+        <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} Clip-Board</span>
-          <span className="hidden sm:inline">·</span>
+          <span className="hidden sm:inline text-muted-foreground/40">·</span>
           <a href="/contact" className="hover:text-foreground transition-colors">Contact Developer</a>
         </div>
       </footer>
