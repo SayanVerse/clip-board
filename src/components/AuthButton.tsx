@@ -9,15 +9,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogIn, LogOut, User } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export const AuthButton = () => {
-  const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSignIn = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) {
-      toast.error("Failed to sign in with Google");
-    }
+  const handleSignIn = () => {
+    navigate("/auth");
   };
 
   const handleSignOut = async () => {
