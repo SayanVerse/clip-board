@@ -145,10 +145,11 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
 
   const deleteItem = async (id: string) => {
     setDeletingId(id);
+    
+    // Immediately remove from local state for instant UI feedback
+    setItems(prev => prev.filter(item => item.id !== id));
+    
     try {
-      // Wait for animation to start
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
       const { error } = await supabase
         .from("clipboard_items")
         .delete()
@@ -157,7 +158,9 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       if (error) throw error;
       toast.success("Deleted");
     } catch (error) {
+      // If delete failed, reload to restore the item
       toast.error("Failed to delete");
+      loadHistory();
     } finally {
       setDeletingId(null);
     }

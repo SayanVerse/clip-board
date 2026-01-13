@@ -136,11 +136,9 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       toast.success(contentType === "code" ? `Code sent (${langToUse})` : "Text sent");
       feedback.send();
       
-      if (contentType === "text") {
-        setText("");
-      } else {
-        setCode("");
-      }
+      // Always clear both inputs to ensure clean state
+      setText("");
+      setCode("");
       
       if (sessionId) {
         await supabase
