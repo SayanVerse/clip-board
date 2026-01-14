@@ -71,6 +71,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          phone: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -78,6 +79,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          phone?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
         }
         Relationships: []
       }
@@ -109,6 +112,33 @@ export type Database = {
           id?: string
           last_activity?: string
           session_code?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          id: string
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          id?: string
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          id?: string
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
