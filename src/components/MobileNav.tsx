@@ -5,16 +5,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { AuthButton } from "@/components/AuthButton";
 import { SessionTimer } from "@/components/SessionTimer";
+import { UserSettings } from "@/components/UserSettings";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
   sessionId: string | null;
   sessionStart: number | null;
   isLoggedIn: boolean;
+  userId?: string;
 }
 
-export const MobileNav = ({ sessionId, sessionStart, isLoggedIn }: MobileNavProps) => {
+export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: MobileNavProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -97,15 +98,25 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn }: MobileNavProp
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Theme</span>
-                    <ThemeToggle />
-                  </div>
+                  {!isLoggedIn && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Theme</span>
+                      <ThemeToggle />
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Shortcuts</span>
                     <KeyboardShortcuts />
                   </div>
+
+                  {/* Settings (for logged-in users) */}
+                  {isLoggedIn && userId && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Settings</span>
+                      <UserSettings userId={userId} />
+                    </div>
+                  )}
 
                   {/* Auth Button */}
                   <div className="pt-2 border-t border-border/50">
@@ -139,7 +150,11 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn }: MobileNavProp
               </div>
             )}
             <KeyboardShortcuts />
-            <ThemeToggle />
+            {isLoggedIn && userId ? (
+              <UserSettings userId={userId} />
+            ) : (
+              <ThemeToggle />
+            )}
             <AuthButton />
           </div>
         </div>

@@ -3,11 +3,9 @@ import { SessionManager } from "@/components/SessionManager";
 import { ClipboardInput } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { MobileNav } from "@/components/MobileNav";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { SessionTimer } from "@/components/SessionTimer";
-import { AuthButton } from "@/components/AuthButton";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { AIChatbot } from "@/components/AIChatbot";
 import { useAuth } from "@/hooks/useAuth";
 import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
@@ -114,7 +112,8 @@ const Index = () => {
       <MobileNav 
         sessionId={sessionId} 
         sessionStart={sessionStart} 
-        isLoggedIn={isLoggedIn} 
+        isLoggedIn={isLoggedIn}
+        userId={user?.id}
       />
 
       <main className="flex-1">
@@ -313,6 +312,9 @@ const Index = () => {
           <a href="/contact" className="hover:text-foreground transition-colors">Contact Developer</a>
         </div>
       </footer>
+
+      {/* AI Chatbot - Only for logged-in users */}
+      {isLoggedIn && <AIChatbot />}
     </div>
   );
 };
