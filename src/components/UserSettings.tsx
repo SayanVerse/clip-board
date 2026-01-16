@@ -8,52 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, X, Sun, Moon, Monitor, Check, Palette, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { 
+  useThemePreferences, 
+  PRESET_COLORS, 
+  GRADIENT_PRESETS 
+} from "@/hooks/useThemePreferences";
 
 interface UserSettingsProps {
-  userId: string;
+  userId: string | null;
 }
-
-const PRESET_COLORS = [
-  { id: "blue", label: "Blue", hsl: "217 91% 60%" },
-  { id: "purple", label: "Purple", hsl: "262 83% 58%" },
-  { id: "green", label: "Green", hsl: "142 76% 36%" },
-  { id: "orange", label: "Orange", hsl: "24 95% 53%" },
-  { id: "pink", label: "Pink", hsl: "330 81% 60%" },
-  { id: "red", label: "Red", hsl: "0 84% 60%" },
-  { id: "cyan", label: "Cyan", hsl: "188 94% 43%" },
-  { id: "amber", label: "Amber", hsl: "38 92% 50%" },
-  { id: "emerald", label: "Emerald", hsl: "160 84% 39%" },
-  { id: "violet", label: "Violet", hsl: "258 90% 66%" },
-  { id: "rose", label: "Rose", hsl: "347 77% 50%" },
-  { id: "teal", label: "Teal", hsl: "174 84% 32%" },
-];
-
-const GRADIENT_PRESETS = [
-  { id: "sunset", label: "Sunset", from: "0 84% 60%", to: "24 95% 53%" },
-  { id: "ocean", label: "Ocean", from: "217 91% 60%", to: "188 94% 43%" },
-  { id: "forest", label: "Forest", from: "142 76% 36%", to: "160 84% 39%" },
-  { id: "aurora", label: "Aurora", from: "262 83% 58%", to: "330 81% 60%" },
-  { id: "fire", label: "Fire", from: "24 95% 53%", to: "0 84% 60%" },
-  { id: "lavender", label: "Lavender", from: "258 90% 66%", to: "330 81% 60%" },
-  { id: "mint", label: "Mint", from: "174 84% 32%", to: "142 76% 36%" },
-  { id: "golden", label: "Golden", from: "38 92% 50%", to: "24 95% 53%" },
-];
 
 export const UserSettings = ({ userId }: UserSettingsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [accentColor, setAccentColor] = useState("blue");
-  const [customColor, setCustomColor] = useState("#3b82f6");
-  const [gradientId, setGradientId] = useState<string | null>(null);
-  const [colorMode, setColorMode] = useState<"solid" | "gradient">("solid");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    loadPreferences();
-  }, [userId]);
+  
+  const { 
+    preferences, 
+    saving, 
+    savePreferences,
+  } = useThemePreferences(userId);
 
   // Prevent body scroll when panel is open
   useEffect(() => {
@@ -67,144 +41,33 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
     };
   }, [isOpen]);
 
-  const loadPreferences = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("user_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        console.error("Error loading preferences:", error);
-        return;
-      }
-
-      if (data) {
-        if (data.theme) setTheme(data.theme);
-        if (data.accent_color) {
-          if (data.accent_color.startsWith("gradient:")) {
-            setColorMode("gradient");
-            const gradId = data.accent_color.replace("gradient:", "");
-            setGradientId(gradId);
-            applyGradient(gradId);
-          } else if (data.accent_color.startsWith("custom:")) {
-            setColorMode("solid");
-            const hex = data.accent_color.replace("custom:", "");
-            setCustomColor(hex);
-            applyCustomColor(hex);
-          } else {
-            setColorMode("solid");
-            setAccentColor(data.accent_color);
-            applyAccentColor(data.accent_color);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error loading preferences:", error);
-    }
-  };
-
-  const hexToHsl = (hex: string): string => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return "217 91% 60%";
-    
-    let r = parseInt(result[1], 16) / 255;
-    let g = parseInt(result[2], 16) / 255;
-    let b = parseInt(result[3], 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
-      }
-    }
-
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-  };
-
-  const applyAccentColor = (colorId: string) => {
-    const color = PRESET_COLORS.find(c => c.id === colorId);
-    if (color) {
-      document.documentElement.style.setProperty("--primary", color.hsl);
-      document.documentElement.style.setProperty("--primary-glow", color.hsl);
-      document.documentElement.style.setProperty("--ring", color.hsl);
-    }
-  };
-
-  const applyCustomColor = (hex: string) => {
-    const hsl = hexToHsl(hex);
-    document.documentElement.style.setProperty("--primary", hsl);
-    document.documentElement.style.setProperty("--primary-glow", hsl);
-    document.documentElement.style.setProperty("--ring", hsl);
-  };
-
-  const applyGradient = (gradId: string) => {
-    const gradient = GRADIENT_PRESETS.find(g => g.id === gradId);
-    if (gradient) {
-      document.documentElement.style.setProperty("--primary", gradient.from);
-      document.documentElement.style.setProperty("--primary-glow", gradient.to);
-      document.documentElement.style.setProperty("--ring", gradient.from);
-    }
-  };
-
-  const savePreferences = async (newTheme?: string, colorValue?: string) => {
-    setLoading(true);
-    try {
-      const preferences = {
-        user_id: userId,
-        theme: newTheme || theme,
-        accent_color: colorValue || (colorMode === "gradient" ? `gradient:${gradientId}` : accentColor),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from("user_preferences")
-        .upsert(preferences, { onConflict: "user_id" });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error saving preferences:", error);
-      toast.error("Failed to save preferences");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
-    savePreferences(newTheme, undefined);
+    savePreferences({ theme: newTheme });
   };
 
   const handleAccentChange = (colorId: string) => {
-    setAccentColor(colorId);
-    setGradientId(null);
-    setColorMode("solid");
-    applyAccentColor(colorId);
-    savePreferences(undefined, colorId);
+    savePreferences({ 
+      accentColor: colorId, 
+      colorMode: "solid", 
+      gradientId: null 
+    });
   };
 
   const handleCustomColorChange = (hex: string) => {
-    setCustomColor(hex);
-    setGradientId(null);
-    setColorMode("solid");
-    applyCustomColor(hex);
-    savePreferences(undefined, `custom:${hex}`);
+    savePreferences({ 
+      customColor: hex, 
+      accentColor: `custom:${hex}`, 
+      colorMode: "solid", 
+      gradientId: null 
+    });
   };
 
   const handleGradientChange = (gradId: string) => {
-    setGradientId(gradId);
-    setColorMode("gradient");
-    applyGradient(gradId);
-    savePreferences(undefined, `gradient:${gradId}`);
+    savePreferences({ 
+      gradientId: gradId, 
+      colorMode: "gradient" 
+    });
   };
 
   // Render the panel using a portal to ensure it's always on top
@@ -304,18 +167,20 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
                         <button
                           key={color.id}
                           onClick={() => handleAccentChange(color.id)}
+                          disabled={saving}
                           className={cn(
                             "flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all",
-                            accentColor === color.id && colorMode === "solid"
+                            preferences.accentColor === color.id && preferences.colorMode === "solid"
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
+                              : "border-border hover:border-primary/50",
+                            saving && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <div
                             className="w-8 h-8 rounded-full relative flex items-center justify-center shadow-sm"
                             style={{ backgroundColor: `hsl(${color.hsl})` }}
                           >
-                            {accentColor === color.id && colorMode === "solid" && (
+                            {preferences.accentColor === color.id && preferences.colorMode === "solid" && (
                               <Check className="h-4 w-4 text-white drop-shadow" />
                             )}
                           </div>
@@ -331,17 +196,19 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
                         <div className="relative">
                           <input
                             type="color"
-                            value={customColor}
+                            value={preferences.customColor}
                             onChange={(e) => handleCustomColorChange(e.target.value)}
-                            className="w-16 h-16 rounded-xl cursor-pointer border-2 border-border"
+                            disabled={saving}
+                            className="w-16 h-16 rounded-xl cursor-pointer border-2 border-border disabled:opacity-50"
                           />
                         </div>
                         <div className="flex-1 space-y-2">
                           <Label className="text-sm">Custom Color</Label>
                           <Input
-                            value={customColor}
+                            value={preferences.customColor}
                             onChange={(e) => handleCustomColorChange(e.target.value)}
                             placeholder="#3b82f6"
+                            disabled={saving}
                             className="font-mono"
                           />
                         </div>
@@ -358,11 +225,13 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
                         <button
                           key={gradient.id}
                           onClick={() => handleGradientChange(gradient.id)}
+                          disabled={saving}
                           className={cn(
                             "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
-                            gradientId === gradient.id && colorMode === "gradient"
+                            preferences.gradientId === gradient.id && preferences.colorMode === "gradient"
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
+                              : "border-border hover:border-primary/50",
+                            saving && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <div
@@ -371,7 +240,7 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
                               background: `linear-gradient(135deg, hsl(${gradient.from}), hsl(${gradient.to}))`
                             }}
                           >
-                            {gradientId === gradient.id && colorMode === "gradient" && (
+                            {preferences.gradientId === gradient.id && preferences.colorMode === "gradient" && (
                               <Check className="h-4 w-4 text-white drop-shadow" />
                             )}
                           </div>
@@ -387,8 +256,8 @@ export const UserSettings = ({ userId }: UserSettingsProps) => {
                 </Tabs>
               </div>
 
-              {loading && (
-                <p className="text-sm text-muted-foreground mt-4 text-center">
+              {saving && (
+                <p className="text-sm text-muted-foreground mt-4 text-center animate-pulse">
                   Saving preferences...
                 </p>
               )}
