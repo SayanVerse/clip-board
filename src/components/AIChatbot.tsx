@@ -1,30 +1,50 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, X, Send, Bot, User, Loader2, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import { 
+  MessageSquare, X, Send, Bot, User, Loader2, Trash2, Maximize2, Minimize2, 
+  Copy, ClipboardPaste, History, Plus, Image, Upload, Check
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { useChatPersistence, ChatMessage } from "@/hooks/useChatPersistence";
+import { toast } from "sonner";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-export const AIChatbot = () => {
+interface AIChatbotProps {
+  onSendToClipboard?: (content: string) => void;
+}
+
+export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hello! I'm your AI Assistant. I can help you with:\n\n- **Answering questions** on any topic\n- **Writing and debugging code**\n- **Explaining concepts** clearly\n- **Creative writing** and brainstorming\n\nHow can I assist you today?" }
-  ]);
+  const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [sentToClipboardId, setSentToClipboardId] = useState<number | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    conversations,
+    messages,
+    currentConversationId,
+    startNewConversation,
+    addMessage,
+    updateLastAssistantMessage,
+    switchConversation,
+    deleteConversation,
+    clearCurrentConversation,
+  } = useChatPersistence(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -38,7 +58,13 @@ export const AIChatbot = () => {
     }
   }, [isOpen]);
 
-  // Auto-resize textarea
+  // Ensure we have a conversation
+  useEffect(() => {
+    if (isOpen && !currentConversationId && conversations.length === 0) {
+      startNewConversation();
+    }
+  }, [isOpen, currentConversationId, conversations.length, startNewConversation]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     if (textareaRef.current) {
@@ -47,88 +73,190 @@ export const AIChatbot = () => {
     }
   };
 
-  const clearChat = () => {
-    setMessages([
-      { role: "assistant", content: "Chat cleared. How can I help you?" }
-    ]);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setUploadedFilePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setUploadedFilePreview(null);
+      }
+    }
+  };
+
+  const removeUploadedFile = () => {
+    setUploadedFile(null);
+    setUploadedFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCopy = async (content: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(index);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      toast.error("Failed to copy");
+    }
+  };
+
+  const handleSendToClipboard = (content: string, index: number) => {
+    if (onSendToClipboard) {
+      onSendToClipboard(content);
+      setSentToClipboardId(index);
+      toast.success("Sent to Clip-Board input!");
+      setTimeout(() => setSentToClipboardId(null), 2000);
+    }
+  };
+
+  const handleNewChat = () => {
+    startNewConversation();
+    setShowHistory(false);
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !uploadedFile) || isLoading) return;
 
-    const userMessage: Message = { role: "user", content: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
+    // Ensure we have a conversation
+    if (!currentConversationId) {
+      startNewConversation();
+    }
+
+    let userContent = input.trim();
+    let isImageGenRequest = false;
+    
+    // Check for image generation request
+    const imageGenPatterns = [
+      /^generate\s+(an?\s+)?image/i,
+      /^create\s+(an?\s+)?image/i,
+      /^make\s+(an?\s+)?image/i,
+      /^draw\s+/i,
+      /^imagine\s+/i,
+    ];
+    isImageGenRequest = imageGenPatterns.some(p => p.test(userContent));
+
+    // Handle file upload
+    if (uploadedFile) {
+      if (uploadedFile.type.startsWith("image/") && uploadedFilePreview) {
+        userContent = `[Image attached: ${uploadedFile.name}]\n\n${userContent}`;
+      } else {
+        // Read text file content
+        try {
+          const text = await uploadedFile.text();
+          userContent = `[File: ${uploadedFile.name}]\n\`\`\`\n${text.slice(0, 5000)}\n\`\`\`\n\n${userContent}`;
+        } catch {
+          userContent = `[File: ${uploadedFile.name} - could not read]\n\n${userContent}`;
+        }
+      }
+    }
+
+    const userMessage: ChatMessage = { role: "user", content: userContent, type: "text" };
+    addMessage(userMessage);
     setInput("");
+    removeUploadedFile();
+    
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
     setIsLoading(true);
 
+    // Add placeholder assistant message
+    addMessage({ role: "assistant", content: "", type: "text" });
+
     let assistantContent = "";
 
     try {
-      const response = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
+      // Handle image generation
+      if (isImageGenRequest) {
+        const imagePrompt = userContent.replace(/^(generate|create|make|draw|imagine)\s+(an?\s+)?(image\s+of\s*)?/i, "").trim();
+        
+        const response = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            messages: [{ role: "user", content: imagePrompt }],
+            generateImage: true 
+          }),
+        });
 
-      if (!response.ok || !response.body) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to get response");
-      }
+        if (!response.ok) {
+          throw new Error("Failed to generate image");
+        }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
+        const data = await response.json();
+        const imageUrl = data.imageUrl;
+        
+        if (imageUrl) {
+          updateLastAssistantMessage(`Here's the generated image:\n\n![Generated Image](${imageUrl})`, imageUrl);
+        } else {
+          updateLastAssistantMessage("I'm sorry, I couldn't generate the image. Please try again with a different prompt.");
+        }
+      } else {
+        // Regular chat completion
+        const response = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ messages: [...messages.slice(-10), userMessage] }),
+        });
 
-      // Add initial assistant message
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+        if (!response.ok || !response.body) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to get response");
+        }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let textBuffer = "";
 
-        textBuffer += decoder.decode(value, { stream: true });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
+          textBuffer += decoder.decode(value, { stream: true });
 
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
+          let newlineIndex: number;
+          while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+            let line = textBuffer.slice(0, newlineIndex);
+            textBuffer = textBuffer.slice(newlineIndex + 1);
 
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (line.startsWith(":") || line.trim() === "") continue;
+            if (!line.startsWith("data: ")) continue;
 
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1] = { role: "assistant", content: assistantContent };
-                return newMessages;
-              });
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === "[DONE]") break;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                assistantContent += content;
+                updateLastAssistantMessage(assistantContent);
+              }
+            } catch {
+              textBuffer = line + "\n" + textBuffer;
+              break;
             }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
           }
         }
       }
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [
-        ...prev,
-        { role: "assistant", content: "I apologize, but I encountered an error processing your request. Please try again." }
-      ]);
+      updateLastAssistantMessage("I apologize, but I encountered an error processing your request. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -141,10 +269,22 @@ export const AIChatbot = () => {
     }
   };
 
-  // Chat panel dimensions based on expanded state
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Chat panel dimensions
   const panelClasses = isExpanded
-    ? "fixed inset-4 md:inset-8 z-[60]"
-    : "fixed bottom-6 right-6 z-[60] w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-6rem)] md:w-[450px] md:h-[650px]";
+    ? "fixed inset-2 sm:inset-4 md:inset-8 z-[60]"
+    : "fixed bottom-4 right-4 z-[60] w-[95vw] max-w-[420px] h-[85vh] max-h-[680px] sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[650px]";
 
   return (
     <>
@@ -155,14 +295,14 @@ export const AIChatbot = () => {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-[60]"
+            className="fixed bottom-4 right-4 z-[60] sm:bottom-6 sm:right-6"
           >
             <Button
               onClick={() => setIsOpen(true)}
               size="lg"
-              className="h-14 w-14 rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-105"
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-105"
             >
-              <MessageSquare className="h-6 w-6" />
+              <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </motion.div>
         )}
@@ -172,7 +312,6 @@ export const AIChatbot = () => {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop for expanded mode */}
             {isExpanded && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -194,30 +333,48 @@ export const AIChatbot = () => {
               )}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                    <Bot className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 border-b border-border bg-muted/50 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                    <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">AI Assistant</p>
-                    <p className="text-xs text-muted-foreground">Powered by Gemini</p>
+                    <p className="font-semibold text-xs sm:text-sm">AI Assistant</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Powered by Gemini</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
-                    onClick={clearChat}
-                    title="Clear chat"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
+                    onClick={handleNewChat}
+                    title="New chat"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 hidden md:flex"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
+                    onClick={() => setShowHistory(!showHistory)}
+                    title="Recent chats"
+                  >
+                    <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
+                    onClick={clearCurrentConversation}
+                    title="Clear chat"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex"
                     onClick={() => setIsExpanded(!isExpanded)}
                     title={isExpanded ? "Minimize" : "Maximize"}
                   >
@@ -226,65 +383,223 @@ export const AIChatbot = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
                     onClick={() => {
                       setIsOpen(false);
                       setIsExpanded(false);
+                      setShowHistory(false);
                     }}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
 
+              {/* Recent Chats Sidebar */}
+              <AnimatePresence>
+                {showHistory && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="border-b border-border bg-muted/30 overflow-hidden"
+                  >
+                    <div className="p-2 sm:p-3 max-h-48 overflow-y-auto">
+                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2">Recent Chats</p>
+                      {conversations.length === 0 ? (
+                        <p className="text-[10px] sm:text-xs text-muted-foreground italic">No recent chats</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {conversations.map(conv => (
+                            <div
+                              key={conv.id}
+                              className={cn(
+                                "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors text-xs sm:text-sm",
+                                conv.id === currentConversationId
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-muted"
+                              )}
+                              onClick={() => {
+                                switchConversation(conv.id);
+                                setShowHistory(false);
+                              }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium text-[11px] sm:text-xs">{conv.title}</p>
+                                <p className="text-[9px] sm:text-[10px] text-muted-foreground">{formatDate(conv.updatedAt)}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0 ml-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteConversation(conv.id);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Messages */}
               <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-                <div className="p-4 space-y-4">
+                <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                   {messages.map((msg, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "flex gap-3",
+                        "flex gap-2 sm:gap-3",
                         msg.role === "user" ? "justify-end" : "justify-start"
                       )}
                     >
                       {msg.role === "assistant" && (
-                        <div className="p-2 rounded-xl bg-primary/10 h-fit shrink-0">
-                          <Bot className="h-4 w-4 text-primary" />
+                        <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10 h-fit shrink-0">
+                          <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                         </div>
                       )}
                       <div
                         className={cn(
-                          "max-w-[85%] rounded-2xl px-4 py-3 text-sm overflow-hidden",
+                          "rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm relative group",
+                          "max-w-[85%] min-w-0 w-fit",
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground rounded-tr-md"
                             : "bg-muted rounded-tl-md"
                         )}
+                        style={{
+                          wordBreak: "break-word",
+                          overflowWrap: "anywhere",
+                          whiteSpace: "pre-wrap",
+                        }}
                       >
                         {msg.content ? (
                           msg.role === "assistant" ? (
-                            <div className="prose prose-sm dark:prose-invert max-w-none break-words overflow-wrap-anywhere [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_code]:break-all [&_p]:break-words [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0.5">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <div 
+                              className="prose prose-sm dark:prose-invert max-w-none 
+                                [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 
+                                [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:my-2 [&_pre]:p-2 [&_pre]:rounded-lg [&_pre]:bg-background/50
+                                [&_code]:text-[10px] [&_code]:sm:text-xs [&_code]:break-all
+                                [&_p]:my-1.5 [&_p]:break-words [&_p]:leading-relaxed
+                                [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0.5
+                                [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm
+                                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-2"
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                            >
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  pre: ({ children }) => (
+                                    <div className="relative group/code">
+                                      <pre className="overflow-x-auto">{children}</pre>
+                                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/code:opacity-100 transition-opacity">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 bg-background/80"
+                                          onClick={() => {
+                                            const code = (children as any)?.props?.children || "";
+                                            handleCopy(code, i * 1000);
+                                          }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                        {onSendToClipboard && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 bg-background/80"
+                                            onClick={() => {
+                                              const code = (children as any)?.props?.children || "";
+                                              handleSendToClipboard(code, i * 1000);
+                                            }}
+                                          >
+                                            <ClipboardPaste className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                  img: ({ src, alt }) => (
+                                    <div className="relative group/img">
+                                      <img src={src} alt={alt} className="max-w-full rounded-lg" />
+                                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 bg-background/80"
+                                          onClick={() => handleCopy(src || "", i * 2000)}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                        {onSendToClipboard && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 bg-background/80"
+                                            onClick={() => handleSendToClipboard(src || "", i * 2000)}
+                                          >
+                                            <ClipboardPaste className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                }}
+                              >
                                 {msg.content}
                               </ReactMarkdown>
                             </div>
                           ) : (
-                            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                            <p style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                              {msg.content}
+                            </p>
                           )
                         ) : (
                           isLoading && i === messages.length - 1 && (
                             <div className="flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-muted-foreground">Thinking...</span>
+                              <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                              <span className="text-muted-foreground text-[11px] sm:text-xs">Thinking...</span>
                             </div>
                           )
                         )}
+                        
+                        {/* Action buttons for assistant messages */}
+                        {msg.role === "assistant" && msg.content && (
+                          <div className="flex gap-1 mt-2 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] sm:text-xs"
+                              onClick={() => handleCopy(msg.content, i)}
+                            >
+                              {copiedId === i ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                              {copiedId === i ? "Copied" : "Copy"}
+                            </Button>
+                            {onSendToClipboard && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] sm:text-xs"
+                                onClick={() => handleSendToClipboard(msg.content, i)}
+                              >
+                                {sentToClipboardId === i ? <Check className="h-3 w-3 mr-1" /> : <ClipboardPaste className="h-3 w-3 mr-1" />}
+                                {sentToClipboardId === i ? "Sent" : "To Clip-Board"}
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {msg.role === "user" && (
-                        <div className="p-2 rounded-xl bg-muted h-fit shrink-0">
-                          <User className="h-4 w-4 text-muted-foreground" />
+                        <div className="p-1.5 sm:p-2 rounded-xl bg-muted h-fit shrink-0">
+                          <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                         </div>
                       )}
                     </motion.div>
@@ -292,24 +607,64 @@ export const AIChatbot = () => {
                 </div>
               </ScrollArea>
 
+              {/* File preview */}
+              {uploadedFile && (
+                <div className="px-3 sm:px-4 py-2 border-t border-border bg-muted/30">
+                  <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                    {uploadedFilePreview ? (
+                      <img src={uploadedFilePreview} alt="Preview" className="h-10 w-10 object-cover rounded" />
+                    ) : (
+                      <div className="h-10 w-10 flex items-center justify-center bg-muted rounded">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{uploadedFile.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(uploadedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={removeUploadedFile}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Input */}
-              <div className="p-3 border-t border-border bg-muted/30 shrink-0">
-                <div className="flex gap-2 items-end">
+              <div className="p-2 sm:p-3 border-t border-border bg-muted/30 shrink-0">
+                <div className="flex gap-1.5 sm:gap-2 items-end">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    accept="image/*,.txt,.md,.json,.js,.ts,.py,.html,.css"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 sm:h-[44px] sm:w-[44px] shrink-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Upload file"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
                   <Textarea
                     ref={textareaRef}
                     value={input}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything... (Shift+Enter for new line)"
+                    placeholder="Ask anything... (Shift+Enter for new line)"
                     disabled={isLoading}
-                    className="flex-1 min-h-[44px] max-h-[150px] resize-none py-3"
+                    className="flex-1 min-h-[36px] sm:min-h-[44px] max-h-[120px] sm:max-h-[150px] resize-none py-2 sm:py-3 text-xs sm:text-sm"
                     rows={1}
                   />
                   <Button
                     onClick={sendMessage}
-                    disabled={!input.trim() || isLoading}
+                    disabled={(!input.trim() && !uploadedFile) || isLoading}
                     size="icon"
-                    className="h-[44px] w-[44px] shrink-0"
+                    className="h-9 w-9 sm:h-[44px] sm:w-[44px] shrink-0"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -318,8 +673,8 @@ export const AIChatbot = () => {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Press Enter to send • Shift+Enter for new line
+                <p className="text-[9px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2 text-center">
+                  Enter to send • Shift+Enter for new line
                 </p>
               </div>
             </motion.div>
