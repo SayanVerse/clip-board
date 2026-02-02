@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,12 @@ interface ClipboardInputProps {
   userId?: string;
 }
 
-export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInputProps) => {
+export interface ClipboardInputHandle {
+  setContent: (content: string, mode: "text" | "code") => void;
+}
+
+export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputProps>(
+  ({ sessionId, deviceName, userId }, ref) => {
   const [text, setText] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("auto");
@@ -33,6 +38,19 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  // Expose setContent method via ref for external components (like chatbot)
+  useImperativeHandle(ref, () => ({
+    setContent: (content: string, newMode: "text" | "code") => {
+      if (newMode === "code") {
+        setCode(content);
+        setMode("code");
+      } else {
+        setText(content);
+        setMode("text");
+      }
+    }
+  }));
 
   // AI-powered language detection
   const { 
@@ -516,4 +534,6 @@ export const ClipboardInput = ({ sessionId, deviceName, userId }: ClipboardInput
       />
     </Card>
   );
-};
+});
+
+ClipboardInput.displayName = "ClipboardInput";
