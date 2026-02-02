@@ -281,10 +281,13 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
     return date.toLocaleDateString();
   };
 
-  // Chat panel dimensions
+  // Chat panel dimensions - ensure proper width constraints for overflow
   const panelClasses = isExpanded
     ? "fixed inset-2 sm:inset-4 md:inset-8 z-[60]"
     : "fixed bottom-4 right-4 z-[60] w-[95vw] max-w-[420px] h-[85vh] max-h-[680px] sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[650px]";
+
+  // Computed max width for message content to prevent overflow
+  const messageMaxWidth = isExpanded ? "calc(100% - 4rem)" : "calc(100% - 3rem)";
 
   return (
     <>
@@ -449,8 +452,8 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
               </AnimatePresence>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-                <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+              <ScrollArea className="flex-1 min-h-0 overflow-hidden" ref={scrollRef}>
+                <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-hidden">
                   {messages.map((msg, i) => (
                     <motion.div
                       key={i}
@@ -469,7 +472,7 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                       <div
                         className={cn(
                           "rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm relative group",
-                          "max-w-[85%] min-w-0 w-fit",
+                          "max-w-[85%] min-w-0 w-fit overflow-hidden",
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground rounded-tr-md"
                             : "bg-muted rounded-tl-md"
@@ -478,27 +481,64 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                           wordBreak: "break-word",
                           overflowWrap: "anywhere",
                           whiteSpace: "pre-wrap",
+                          maxWidth: isExpanded ? "85%" : "calc(100% - 2.5rem)",
                         }}
                       >
                         {msg.content ? (
                           msg.role === "assistant" ? (
                             <div 
-                              className="prose prose-sm dark:prose-invert max-w-none 
+                              className="prose prose-sm dark:prose-invert max-w-none overflow-hidden
                                 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 
                                 [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:my-2 [&_pre]:p-2 [&_pre]:rounded-lg [&_pre]:bg-background/50
-                                [&_code]:text-[10px] [&_code]:sm:text-xs [&_code]:break-all
-                                [&_p]:my-1.5 [&_p]:break-words [&_p]:leading-relaxed
+                                [&_code]:text-[10px] [&_code]:sm:text-xs [&_code]:break-all [&_code]:whitespace-pre-wrap
+                                [&_p]:my-1.5 [&_p]:break-words [&_p]:leading-relaxed [&_p]:max-w-full
                                 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0.5
                                 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm
-                                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-2"
-                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-2 [&_img]:h-auto"
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere", maxWidth: "100%" }}
                             >
+                              {/* Render generated image directly if imageUrl exists */}
+                              {msg.imageUrl && (
+                                <div className="relative group/img mb-2">
+                                  <img 
+                                    src={msg.imageUrl} 
+                                    alt="Generated Image" 
+                                    className="max-w-full rounded-lg h-auto"
+                                    onError={(e) => {
+                                      console.error("Image failed to load:", msg.imageUrl?.substring(0, 100));
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                  />
+                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 bg-background/80"
+                                      onClick={() => handleCopy(msg.imageUrl || "", i * 2000)}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                    {onSendToClipboard && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 bg-background/80"
+                                        onClick={() => handleSendToClipboard(msg.imageUrl || "", i * 2000)}
+                                      >
+                                        <ClipboardPaste className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                               <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                   pre: ({ children }) => (
-                                    <div className="relative group/code">
-                                      <pre className="overflow-x-auto">{children}</pre>
+                                    <div className="relative group/code overflow-hidden max-w-full">
+                                      <pre className="overflow-x-auto max-w-full" style={{ maxWidth: "100%", overflowX: "auto" }}>
+                                        {children}
+                                      </pre>
                                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/code:opacity-100 transition-opacity">
                                         <Button
                                           variant="ghost"
@@ -527,9 +567,10 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                                       </div>
                                     </div>
                                   ),
-                                  img: ({ src, alt }) => (
+                                  // Skip markdown img if imageUrl already rendered above
+                                  img: msg.imageUrl ? () => null : ({ src, alt }) => (
                                     <div className="relative group/img">
-                                      <img src={src} alt={alt} className="max-w-full rounded-lg" />
+                                      <img src={src} alt={alt} className="max-w-full rounded-lg h-auto" />
                                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
                                         <Button
                                           variant="ghost"

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { SessionManager } from "@/components/SessionManager";
-import { ClipboardInput } from "@/components/ClipboardInput";
+import { ClipboardInput, ClipboardInputHandle } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { MobileNav } from "@/components/MobileNav";
 import { SessionTimer } from "@/components/SessionTimer";
@@ -9,6 +9,7 @@ import { AIChatbot } from "@/components/AIChatbot";
 import { useAuth } from "@/hooks/useAuth";
 import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const getDeviceName = () => {
   const userAgent = navigator.userAgent;
@@ -25,7 +26,23 @@ const Index = () => {
   const [deviceName] = useState(getDeviceName());
   const [urlCode, setUrlCode] = useState<string | null>(null);
   
+  // Ref to access ClipboardInput's setContent function
+  const clipboardInputRef = useRef<ClipboardInputHandle>(null);
+  
   const { user, loading: authLoading } = useAuth();
+  
+  // Handler for chatbot "Send to Clip-Board" feature
+  const handleSendToClipboardInput = useCallback((content: string) => {
+    if (clipboardInputRef.current) {
+      // Detect if it's code (has code block markers or looks like code)
+      const isCode = content.includes("```") || 
+        /^(function|const|let|var|import|export|class|def|public|private|if|for|while)\s/m.test(content) ||
+        content.includes(";") && content.includes("{");
+      
+      clipboardInputRef.current.setContent(content, isCode ? "code" : "text");
+      toast.success("Content added to clipboard input!");
+    }
+  }, []);
 
   const handleSessionChange = useCallback((newSessionId: string | null, newSessionCode: string | null) => {
     setSessionId(newSessionId);
@@ -251,7 +268,7 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    <ClipboardInput sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
+                    <ClipboardInput ref={clipboardInputRef} sessionId={sessionId} deviceName={deviceName} userId={user?.id} />
                   </motion.div>
                 </div>
                 
@@ -286,7 +303,7 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    <ClipboardInput sessionId={sessionId!} deviceName={deviceName} />
+                    <ClipboardInput ref={clipboardInputRef} sessionId={sessionId!} deviceName={deviceName} />
                   </motion.div>
                 </div>
                 
@@ -314,7 +331,7 @@ const Index = () => {
       </footer>
 
       {/* AI Chatbot - Only for logged-in users */}
-      {isLoggedIn && <AIChatbot />}
+      {isLoggedIn && <AIChatbot onSendToClipboard={handleSendToClipboardInput} />}
     </div>
   );
 };

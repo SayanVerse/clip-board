@@ -73,7 +73,18 @@ export const hexToHsl = (hex: string): string => {
 };
 
 export const useThemePreferences = (userId: string | null) => {
-  const [preferences, setPreferences] = useState<ThemePreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useState<ThemePreferences>(() => {
+    // Initialize from localStorage immediately to prevent flash
+    try {
+      const localData = localStorage.getItem(STORAGE_KEY);
+      if (localData) {
+        return JSON.parse(localData) as ThemePreferences;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    return DEFAULT_PREFERENCES;
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -109,10 +120,15 @@ export const useThemePreferences = (userId: string | null) => {
     }
   }, []);
 
+  // Apply theme immediately on mount from initial state
+  useEffect(() => {
+    applyTheme(preferences);
+  }, []); // Only run once on mount
+
   // Load preferences from localStorage first (instant), then from DB if logged in
   const loadPreferences = useCallback(async () => {
     try {
-      // Always load from localStorage first for instant UI
+      // Re-apply from localStorage (already set in initial state)
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
         const parsed = JSON.parse(localData) as ThemePreferences;
