@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   MessageSquare, X, Send, Bot, User, Loader2, Trash2, Maximize2, Minimize2, 
-  Copy, ClipboardPaste, History, Plus, Image, Upload, Check
+  Copy, ClipboardPaste, History, Plus, Image, Upload, Check, Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -18,6 +18,70 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 interface AIChatbotProps {
   onSendToClipboard?: (content: string) => void;
 }
+
+// Helper function to convert data URL to Blob
+const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+  const res = await fetch(dataUrl);
+  return res.blob();
+};
+
+// Helper function to copy image to clipboard
+const copyImageToClipboard = async (dataUrl: string): Promise<boolean> => {
+  try {
+    if (!dataUrl.startsWith("data:")) {
+      // If it's not a data URL, try to fetch it and convert
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const item = new ClipboardItem({ [blob.type]: blob });
+      await navigator.clipboard.write([item]);
+      return true;
+    }
+
+    const blob = await dataUrlToBlob(dataUrl);
+    // Ensure it's PNG for clipboard compatibility
+    const pngBlob = blob.type === "image/png" ? blob : await convertToPng(dataUrl);
+    const item = new ClipboardItem({ "image/png": pngBlob });
+    await navigator.clipboard.write([item]);
+    return true;
+  } catch (err) {
+    console.error("Failed to copy image:", err);
+    return false;
+  }
+};
+
+// Convert image to PNG blob for clipboard
+const convertToPng = async (dataUrl: string): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Could not create blob"));
+      }, "image/png");
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+};
+
+// Helper function to download image
+const downloadImage = (dataUrl: string, filename = "generated-image.png") => {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -106,6 +170,26 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
     } catch (err) {
       toast.error("Failed to copy");
     }
+  };
+
+  const handleCopyImage = async (imageUrl: string, index: number) => {
+    try {
+      const success = await copyImageToClipboard(imageUrl);
+      if (success) {
+        setCopiedId(index);
+        toast.success("Image copied to clipboard!");
+        setTimeout(() => setCopiedId(null), 2000);
+      } else {
+        toast.error("Failed to copy image");
+      }
+    } catch (err) {
+      toast.error("Failed to copy image");
+    }
+  };
+
+  const handleDownloadImage = (imageUrl: string) => {
+    downloadImage(imageUrl, `generated-image-${Date.now()}.png`);
+    toast.success("Image downloaded!");
   };
 
   const handleSendToClipboard = (content: string, index: number) => {
@@ -514,9 +598,19 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6 bg-background/80"
-                                      onClick={() => handleCopy(msg.imageUrl || "", i * 2000)}
+                                      onClick={() => handleCopyImage(msg.imageUrl || "", i * 2000)}
+                                      title="Copy image"
                                     >
-                                      <Copy className="h-3 w-3" />
+                                      {copiedId === i * 2000 ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 bg-background/80"
+                                      onClick={() => handleDownloadImage(msg.imageUrl || "")}
+                                      title="Download image"
+                                    >
+                                      <Download className="h-3 w-3" />
                                     </Button>
                                     {onSendToClipboard && (
                                       <Button
@@ -524,6 +618,7 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                                         size="icon"
                                         className="h-6 w-6 bg-background/80"
                                         onClick={() => handleSendToClipboard(msg.imageUrl || "", i * 2000)}
+                                        title="Send to Clip-Board"
                                       >
                                         <ClipboardPaste className="h-3 w-3" />
                                       </Button>
@@ -576,9 +671,19 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                                           variant="ghost"
                                           size="icon"
                                           className="h-6 w-6 bg-background/80"
-                                          onClick={() => handleCopy(src || "", i * 2000)}
+                                          onClick={() => handleCopyImage(src || "", i * 2000)}
+                                          title="Copy image"
                                         >
-                                          <Copy className="h-3 w-3" />
+                                          {copiedId === i * 2000 ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 bg-background/80"
+                                          onClick={() => handleDownloadImage(src || "")}
+                                          title="Download image"
+                                        >
+                                          <Download className="h-3 w-3" />
                                         </Button>
                                         {onSendToClipboard && (
                                           <Button
@@ -586,6 +691,7 @@ export const AIChatbot = ({ onSendToClipboard }: AIChatbotProps) => {
                                             size="icon"
                                             className="h-6 w-6 bg-background/80"
                                             onClick={() => handleSendToClipboard(src || "", i * 2000)}
+                                            title="Send to Clip-Board"
                                           >
                                             <ClipboardPaste className="h-3 w-3" />
                                           </Button>

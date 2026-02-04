@@ -89,6 +89,37 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+
+  /* Custom themed scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: hsl(var(--muted));
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) hsl(var(--muted));
+  }
 }
 
 @layer utilities {
@@ -106,5 +137,38 @@
   
   .glass-card {
     @apply bg-card/50 backdrop-blur-md border border-border/40 shadow-md;
+  }
+
+  /* Themed scrollbar utility classes */
+  .scrollbar-themed::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 2px;
   }
 }
