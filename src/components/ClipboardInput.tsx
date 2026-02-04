@@ -213,8 +213,9 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
   };
 
   const processFile = async (file: File) => {
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("File size must be less than 20MB");
+    // Max file size: 100MB (very high limit)
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error("File size must be less than 100MB");
       feedback.error();
       return;
     }
@@ -478,35 +479,42 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
       <div className="flex gap-2 mt-3">
         {mode === "text" ? (
           <>
-            <Button
-              onClick={() => sendText()}
-              disabled={!text.trim() || isSending}
-              size="sm"
-              className="flex-1"
-            >
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-              {codeDetected ? `Send as ${detectedLanguage}` : "Send"}
-            </Button>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSending}
-              variant="outline"
-              size="sm"
-            >
-              <Upload className="mr-1.5 h-3.5 w-3.5" />
-              File
-            </Button>
+            <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => sendText()}
+                disabled={!text.trim() || isSending}
+                size="sm"
+                className="w-full border-2 border-dashed border-primary/50 bg-primary hover:bg-primary/90 transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_hsl(var(--primary)/0.3)] active:translate-x-0 active:translate-y-0 active:shadow-none"
+              >
+                <Send className="mr-1.5 h-3.5 w-3.5" />
+                {codeDetected ? `Send as ${detectedLanguage}` : "Send"}
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSending}
+                variant="outline"
+                size="sm"
+                className="border-2 border-dashed border-border hover:border-primary/50 transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_hsl(var(--muted-foreground)/0.2)] active:translate-x-0 active:translate-y-0 active:shadow-none"
+              >
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                File
+              </Button>
+            </motion.div>
           </>
         ) : (
-          <Button
-            onClick={sendCode}
-            disabled={!code.trim() || isSending}
-            size="sm"
-            className="flex-1"
-          >
-            <Code2 className="mr-1.5 h-3.5 w-3.5" />
-            Send ({language === "auto" ? (detectedLanguage || "auto") : language})
-          </Button>
+          <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={sendCode}
+              disabled={!code.trim() || isSending}
+              size="sm"
+              className="w-full border-2 border-dashed border-primary/50 bg-primary hover:bg-primary/90 transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_hsl(var(--primary)/0.3)] active:translate-x-0 active:translate-y-0 active:shadow-none"
+            >
+              <Code2 className="mr-1.5 h-3.5 w-3.5" />
+              Send ({language === "auto" ? (detectedLanguage || "auto") : language})
+            </Button>
+          </motion.div>
         )}
         
         <input

@@ -83,25 +83,33 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
     }
   };
 
+  // Auto-cleanup disabled - items persist indefinitely
   const deleteOldItems = async () => {
-    if (!userId) return;
-    
-    try {
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      const { error } = await supabase
-        .from("clipboard_items")
-        .delete()
-        .eq("user_id", userId)
-        .eq("is_pinned", false) // Don't delete pinned items
-        .lt("created_at", oneWeekAgo.toISOString());
+    // No auto-cleanup - keep all items forever
+    return;
+  };
 
-      if (error) {
-        console.error("Error deleting old items:", error);
-      }
+  // Download file function - triggers automatic download
+  const downloadFile = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      
+      toast.success("Download started");
+      feedback.copy();
     } catch (error) {
-      console.error("Error in auto-cleanup:", error);
+      console.error("Download failed:", error);
+      toast.error("Failed to download file");
+      feedback.error();
     }
   };
 
@@ -256,7 +264,7 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="font-semibold text-base">Clipboard History</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{items.length} items {userId && <span className="text-primary">• Auto-cleanup after 7 days</span>}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{items.length} items {userId && <span className="text-primary">• Items persist forever</span>}</p>
         </div>
         <div className="flex gap-1">
           <Button 
@@ -469,7 +477,7 @@ export const ClipboardHistory = ({ sessionId, userId }: ClipboardHistoryProps) =
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => window.open(item.file_url, "_blank")}
+                            onClick={() => downloadFile(item.file_url!, item.file_name || 'download')}
                             className="h-8 w-8 rounded-full hover:bg-primary/10"
                           >
                             <Download className="h-4 w-4" />
