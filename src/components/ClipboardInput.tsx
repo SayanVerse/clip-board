@@ -206,8 +206,14 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
     e.preventDefault();
     setIsDragging(false);
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      await processFiles(files);
+    }
+  };
+
+  const processFiles = async (files: File[]) => {
+    for (const file of files) {
       await processFile(file);
     }
   };
@@ -520,10 +526,13 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) processFile(file);
+            const files = e.target.files ? Array.from(e.target.files) : [];
+            if (files.length > 0) {
+              processFiles(files);
+            }
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
         />
