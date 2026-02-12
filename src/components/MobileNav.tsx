@@ -20,12 +20,14 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
 
   return (
     <>
-      {/* Mobile Header - Material AppBar */}
-      <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-[var(--shadow-3)] md:hidden">
+      {/* Mobile Header - Google style */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border shadow-[var(--shadow-1)] md:hidden">
         <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Clipboard className="h-5 w-5" />
-            <span className="font-medium text-base">Clip-Board</span>
+            <div className="p-2 bg-primary rounded-full">
+              <Clipboard className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="font-medium text-base text-foreground">Clip-Board</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -33,15 +35,15 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               <SessionTimer startTime={sessionStart} />
             )}
             {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-primary-foreground/15 rounded-full">
-                <Cloud className="h-3 w-3" />
-                <span className="text-xs font-medium">Synced</span>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-accent rounded-full">
+                <Cloud className="h-3 w-3 text-primary" />
+                <span className="text-xs font-medium text-primary">Synced</span>
               </div>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="h-9 w-9 rounded-full"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -60,7 +62,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-foreground/30 md:hidden"
+              className="fixed inset-0 z-40 bg-foreground/20 md:hidden"
               onClick={() => setIsOpen(false)}
             />
             
@@ -69,7 +71,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="fixed top-14 left-0 right-0 z-50 bg-card shadow-[var(--shadow-4)] md:hidden"
+              className="fixed top-14 left-0 right-0 z-50 bg-card border-b border-border shadow-[var(--shadow-3)] md:hidden"
             >
               <div className="container max-w-6xl mx-auto px-4 py-4">
                 <div className="flex flex-col gap-4">
@@ -115,12 +117,14 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
         )}
       </AnimatePresence>
 
-      {/* Desktop Header - Material AppBar */}
-      <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-[var(--shadow-3)] hidden md:block">
+      {/* Desktop Header - Google style surface */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border shadow-[var(--shadow-1)] hidden md:block">
         <div className="container max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Clipboard className="h-5 w-5" />
-            <span className="font-medium text-lg tracking-wide">Clip-Board</span>
+            <div className="p-2 bg-primary rounded-full">
+              <Clipboard className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="font-medium text-xl text-foreground">Clip-Board</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -128,9 +132,9 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               <SessionTimer startTime={sessionStart} />
             )}
             {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-primary-foreground/15 rounded-full">
-                <Cloud className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Synced</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-accent rounded-full">
+                <Cloud className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">Synced</span>
               </div>
             )}
             <KeyboardShortcuts />
