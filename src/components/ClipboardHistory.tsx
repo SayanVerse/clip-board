@@ -227,7 +227,7 @@ export const ClipboardHistory = ({
   if (isLoading) {
     return <HistorySkeleton />;
   }
-  return <Card className="p-4 md:p-6 border border-border/50 h-full glass">
+  return <Card className="p-4 md:p-6 h-full shadow-[var(--shadow-2)]">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="font-semibold text-base">Clipboard History</h3>
@@ -269,7 +269,7 @@ export const ClipboardHistory = ({
             duration: 0.25,
             ease: [0.4, 0, 0.2, 1]
           }} layout>
-                  <div className={`group p-4 rounded-2xl border backdrop-blur-md transition-all duration-200 overflow-hidden ${item.is_pinned ? 'border-primary/30 bg-primary/5 shadow-lg shadow-primary/5' : 'border-border/50 bg-card/60 hover:bg-card/80 hover:border-border'}`}>
+                  <div className={`group p-4 rounded-xl transition-all duration-200 overflow-hidden ${item.is_pinned ? 'bg-accent shadow-[var(--shadow-2)]' : 'bg-card shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]'}`}>
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Icon */}
                       <div className={`p-2 rounded-xl shrink-0 ${item.is_pinned ? 'bg-primary/15' : 'bg-muted/60'}`}>

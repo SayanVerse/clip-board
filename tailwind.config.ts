@@ -52,6 +52,11 @@ export default {
       boxShadow: {
         'elevated': 'var(--shadow-elevated)',
         'card': 'var(--shadow-card)',
+        'md-1': 'var(--shadow-1)',
+        'md-2': 'var(--shadow-2)',
+        'md-3': 'var(--shadow-3)',
+        'md-4': 'var(--shadow-4)',
+        'md-6': 'var(--shadow-6)',
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
@@ -61,7 +66,7 @@ export default {
         'smooth': 'var(--transition-smooth)',
       },
       fontFamily: {
-        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'sans': ['Roboto', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
