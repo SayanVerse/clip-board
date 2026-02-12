@@ -90,12 +90,24 @@ export const useThemePreferences = (userId: string | null) => {
 
   // Apply theme colors to document
   const applyTheme = useCallback((prefs: ThemePreferences) => {
+    const applyColor = (hsl: string) => {
+      document.documentElement.style.setProperty("--primary", hsl);
+      document.documentElement.style.setProperty("--primary-glow", hsl);
+      document.documentElement.style.setProperty("--ring", hsl);
+      // Update accent to tint from primary for Google Material style
+      const parts = hsl.split(" ");
+      if (parts.length >= 3) {
+        const h = parts[0];
+        document.documentElement.style.setProperty("--accent", `${h} 40% 95%`);
+        document.documentElement.style.setProperty("--accent-foreground", `${h} 82% 40%`);
+      }
+    };
+
     if (prefs.colorMode === "gradient" && prefs.gradientId) {
       const gradient = GRADIENT_PRESETS.find(g => g.id === prefs.gradientId);
       if (gradient) {
-        document.documentElement.style.setProperty("--primary", gradient.from);
+        applyColor(gradient.from);
         document.documentElement.style.setProperty("--primary-glow", gradient.to);
-        document.documentElement.style.setProperty("--ring", gradient.from);
         document.documentElement.style.setProperty(
           "--gradient-primary", 
           `linear-gradient(135deg, hsl(${gradient.from}), hsl(${gradient.to}))`
@@ -105,16 +117,12 @@ export const useThemePreferences = (userId: string | null) => {
     } else if (prefs.accentColor.startsWith("custom:")) {
       const hex = prefs.accentColor.replace("custom:", "");
       const hsl = hexToHsl(hex);
-      document.documentElement.style.setProperty("--primary", hsl);
-      document.documentElement.style.setProperty("--primary-glow", hsl);
-      document.documentElement.style.setProperty("--ring", hsl);
+      applyColor(hsl);
       document.documentElement.removeAttribute("data-gradient-mode");
     } else {
       const color = PRESET_COLORS.find(c => c.id === prefs.accentColor);
       if (color) {
-        document.documentElement.style.setProperty("--primary", color.hsl);
-        document.documentElement.style.setProperty("--primary-glow", color.hsl);
-        document.documentElement.style.setProperty("--ring", color.hsl);
+        applyColor(color.hsl);
       }
       document.documentElement.removeAttribute("data-gradient-mode");
     }

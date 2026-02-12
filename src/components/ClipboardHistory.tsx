@@ -227,10 +227,10 @@ export const ClipboardHistory = ({
   if (isLoading) {
     return <HistorySkeleton />;
   }
-  return <Card className="p-4 md:p-6 h-full shadow-[var(--shadow-2)]">
+  return <Card className="p-4 md:p-6 h-full">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="font-semibold text-base">Clipboard History</h3>
+          <h3 className="font-medium text-base text-foreground">Clipboard History</h3>
           
         </div>
         <div className="flex gap-1">
@@ -245,7 +245,7 @@ export const ClipboardHistory = ({
 
       <ScrollArea className="h-[calc(100vh-280px)] lg:h-[calc(100vh-220px)]">
         {items.length === 0 ? <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-4 rounded-full bg-muted/50 mb-4">
+            <div className="p-4 rounded-full bg-muted mb-4">
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground font-medium">No items yet</p>
@@ -269,10 +269,10 @@ export const ClipboardHistory = ({
             duration: 0.25,
             ease: [0.4, 0, 0.2, 1]
           }} layout>
-                  <div className={`group p-4 rounded-xl transition-all duration-200 overflow-hidden ${item.is_pinned ? 'bg-accent shadow-[var(--shadow-2)]' : 'bg-card shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]'}`}>
+                  <div className={`group p-4 rounded-2xl border border-border transition-all duration-200 overflow-hidden ${item.is_pinned ? 'bg-accent border-primary/30' : 'bg-card hover:shadow-[var(--shadow-1)]'}`}>
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Icon */}
-                      <div className={`p-2 rounded-xl shrink-0 ${item.is_pinned ? 'bg-primary/15' : 'bg-muted/60'}`}>
+                      <div className={`p-2 rounded-full shrink-0 ${item.is_pinned ? 'bg-primary/15' : 'bg-muted'}`}>
                         {item.is_pinned && <Pin className="h-4 w-4 text-primary" />}
                         {!item.is_pinned && item.content_type === "text" && <FileText className="h-4 w-4 text-muted-foreground" />}
                         {!item.is_pinned && item.content_type === "code" && <Code2 className="h-4 w-4 text-muted-foreground" />}

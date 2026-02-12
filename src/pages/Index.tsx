@@ -7,7 +7,7 @@ import { SessionTimer } from "@/components/SessionTimer";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { AIChatbot } from "@/components/AIChatbot";
 import { useAuth } from "@/hooks/useAuth";
-import { Clipboard, Shield, Zap, Monitor, ArrowRight, Cloud, Sparkles } from "lucide-react";
+import { Shield, Zap, Monitor, ArrowRight, Cloud, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -27,7 +27,6 @@ const Index = () => {
   const [urlCode, setUrlCode] = useState<string | null>(null);
   
   const clipboardInputRef = useRef<ClipboardInputHandle>(null);
-  
   const { user, loading: authLoading } = useAuth();
   
   const handleSendToClipboardInput = useCallback((content: string) => {
@@ -35,7 +34,6 @@ const Index = () => {
       const isCode = content.includes("```") || 
         /^(function|const|let|var|import|export|class|def|public|private|if|for|while)\s/m.test(content) ||
         content.includes(";") && content.includes("{");
-      
       clipboardInputRef.current.setContent(content, isCode ? "code" : "text");
       toast.success("Content added to clipboard input!");
     }
@@ -44,7 +42,6 @@ const Index = () => {
   const handleSessionChange = useCallback((newSessionId: string | null, newSessionCode: string | null) => {
     setSessionId(newSessionId);
     setSessionCode(newSessionCode);
-    
     if (newSessionId && newSessionCode) {
       const startTime = Date.now();
       setSessionStart(startTime);
@@ -62,16 +59,13 @@ const Index = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const codeParam = urlParams.get("code");
-    
     if (codeParam && codeParam.length === 4) {
       setUrlCode(codeParam);
       return;
     }
-    
     const storedSessionId = localStorage.getItem("clipboard_session_id");
     const storedSessionCode = localStorage.getItem("clipboard_session_code");
     const sessionStartTime = localStorage.getItem("clipboard_session_start");
-    
     if (storedSessionId && storedSessionCode && sessionStartTime) {
       const startTime = parseInt(sessionStartTime);
       const timeElapsed = Date.now() - startTime;
@@ -85,20 +79,17 @@ const Index = () => {
         localStorage.removeItem("clipboard_session_start");
       }
     }
-
     const handleBeforeUnload = () => {
       localStorage.removeItem("clipboard_session_id");
       localStorage.removeItem("clipboard_session_code");
       localStorage.removeItem("clipboard_session_start");
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
   useEffect(() => {
     if (!sessionId) return;
-
     const checkInterval = setInterval(() => {
       const startTime = localStorage.getItem("clipboard_session_start");
       if (startTime) {
@@ -108,7 +99,6 @@ const Index = () => {
         }
       }
     }, 60000);
-
     return () => clearInterval(checkInterval);
   }, [sessionId, handleSessionChange]);
 
@@ -128,30 +118,30 @@ const Index = () => {
 
       <main className="flex-1">
         {!hasActiveSession ? (
-          <div className="container max-w-6xl mx-auto px-4 py-12 md:py-20">
+          <div className="container max-w-5xl mx-auto px-4 py-12 md:py-20">
             <motion.div 
               className="text-center max-w-2xl mx-auto mb-16"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.4, ease: [0.2, 0, 0, 1] }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent mb-6">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-accent-foreground">AI-Powered Code Detection</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-accent-foreground mb-6">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-sm font-medium">AI-Powered Code Detection</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-5">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-5 text-foreground">
                 Share clipboard
                 <span className="text-primary"> instantly</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+              <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
                 {isLoggedIn 
                   ? "Sign in with Google to sync across all your devices automatically."
                   : "Sync text, code, and files across all your devices with a simple 4-digit code."}
               </p>
               
               <div className="max-w-md mx-auto">
-                <div className="surface-2 rounded-2xl p-6">
+                <div className="bg-card rounded-2xl p-6 border border-border shadow-[var(--shadow-2)]">
                   <SessionManager
                     sessionId={sessionId}
                     sessionCode={sessionCode}
@@ -162,42 +152,42 @@ const Index = () => {
               </div>
             </motion.div>
 
-            {/* Features - Material Cards */}
+            {/* Feature Cards - Google style */}
             <motion.div 
-              className="grid md:grid-cols-3 gap-5 mb-16"
+              className="grid md:grid-cols-3 gap-4 mb-16"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               {[
-                { icon: Shield, title: "Secure & Private", desc: "Auto-expiring sessions with secure data handling" },
-                { icon: Zap, title: "Real-time Sync", desc: "Instant sync with sub-second latency across devices" },
-                { icon: Monitor, title: "Works Everywhere", desc: "Universal compatibility with any modern browser" },
+                { icon: Shield, title: "Secure & Private", desc: "Auto-expiring sessions with secure data handling", color: "text-primary" },
+                { icon: Zap, title: "Real-time Sync", desc: "Instant sync with sub-second latency across devices", color: "text-primary" },
+                { icon: Monitor, title: "Works Everywhere", desc: "Universal compatibility with any modern browser", color: "text-primary" },
               ].map((feature, i) => (
                 <motion.div 
                   key={feature.title} 
-                  className="p-6 rounded-2xl bg-card shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-3)] transition-shadow duration-300 cursor-default"
+                  className="p-6 rounded-2xl bg-card border border-border shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] transition-shadow duration-200 cursor-default"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 + i * 0.05 }}
                 >
-                  <div className="p-3 rounded-xl bg-accent w-fit mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                  <div className="p-3 rounded-full bg-accent w-fit mb-4">
+                    <feature.icon className={`h-5 w-5 ${feature.color}`} />
                   </div>
-                  <h3 className="font-medium mb-2 text-foreground">{feature.title}</h3>
+                  <h3 className="font-medium text-base mb-2 text-foreground">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* How it works - Material Surface */}
+            {/* How it works */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.2 }}
-              className="bg-card rounded-2xl p-8 shadow-[var(--shadow-2)]"
+              className="bg-card rounded-2xl p-8 border border-border shadow-[var(--shadow-1)]"
             >
-              <h2 className="text-2xl font-medium text-center mb-10">How it works</h2>
+              <h2 className="text-2xl font-medium text-center mb-10 text-foreground">How it works</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
                 {[
                   { step: "1", title: "Create Session", desc: "Generate a unique 4-digit code" },
@@ -205,13 +195,13 @@ const Index = () => {
                   { step: "3", title: "Start Syncing", desc: "Copy and paste across devices instantly" },
                 ].map((item, index, arr) => (
                   <div key={item.step} className="relative flex flex-col items-center text-center">
-                    <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium text-xl mb-4 shadow-[var(--shadow-3)]">
+                    <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium text-lg mb-4 shadow-[var(--shadow-2)]">
                       {item.step}
                     </div>
-                    <h4 className="font-medium mb-2">{item.title}</h4>
+                    <h4 className="font-medium mb-1 text-foreground">{item.title}</h4>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
                     {index < arr.length - 1 && (
-                      <ArrowRight className="h-5 w-5 text-muted-foreground/50 absolute -right-4 top-5 hidden md:block" />
+                      <ArrowRight className="h-5 w-5 text-muted-foreground/40 absolute -right-4 top-4 hidden md:block" />
                     )}
                   </div>
                 ))}
@@ -224,17 +214,17 @@ const Index = () => {
               <div className="grid lg:grid-cols-[420px_1fr] gap-6">
                 <div className="space-y-5">
                   <motion.div 
-                    className="bg-card rounded-2xl p-5 shadow-[var(--shadow-2)]"
+                    className="bg-card rounded-2xl p-5 border border-border shadow-[var(--shadow-1)]"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
                     <div className="flex items-center gap-4 mb-4">
                       <div className="p-3 rounded-full bg-accent">
-                        <Cloud className="h-6 w-6 text-primary" />
+                        <Cloud className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">Auto-Sync Mode</p>
+                        <p className="font-medium text-foreground">Auto-Sync Mode</p>
                         <p className="text-xs text-muted-foreground">Synced across all your devices</p>
                       </div>
                     </div>
@@ -304,11 +294,11 @@ const Index = () => {
         )}
       </main>
 
-      <footer className="border-t border-border py-5 mt-auto">
+      <footer className="border-t border-border py-5 mt-auto bg-card">
         <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} Clip-Board</span>
           <span className="hidden sm:inline text-muted-foreground/40">·</span>
-          <a href="/contact" className="hover:text-foreground transition-colors">Contact Developer</a>
+          <a href="/contact" className="hover:text-primary transition-colors">Contact Developer</a>
         </div>
       </footer>
 
