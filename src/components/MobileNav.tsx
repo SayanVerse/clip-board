@@ -20,14 +20,12 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
 
   return (
     <>
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:hidden">
+      {/* Mobile Header - Material AppBar */}
+      <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-[var(--shadow-3)] md:hidden">
         <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-primary rounded-lg">
-              <Clipboard className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm">Clip-Board</span>
+            <Clipboard className="h-5 w-5" />
+            <span className="font-medium text-base">Clip-Board</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -35,15 +33,15 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               <SessionTimer startTime={sessionStart} />
             )}
             {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-full">
-                <Cloud className="h-3 w-3 text-primary" />
-                <span className="text-xs font-medium text-primary">Synced</span>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-primary-foreground/15 rounded-full">
+                <Cloud className="h-3 w-3" />
+                <span className="text-xs font-medium">Synced</span>
               </div>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
+              className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -57,47 +55,37 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-40 bg-foreground/30 md:hidden"
               onClick={() => setIsOpen(false)}
             />
             
-            {/* Menu Panel */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="fixed top-14 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-xl md:hidden"
+              className="fixed top-14 left-0 right-0 z-50 bg-card shadow-[var(--shadow-4)] md:hidden"
             >
               <div className="container max-w-6xl mx-auto px-4 py-4">
                 <div className="flex flex-col gap-4">
-                  {/* Status Section */}
-                  <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm text-muted-foreground">Status</span>
                     <div className="flex items-center gap-2">
                       {sessionId ? (
-                        <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                          Session Active
-                        </span>
+                        <span className="text-xs font-medium text-primary">Session Active</span>
                       ) : isLoggedIn ? (
-                        <span className="text-xs font-medium text-primary">
-                          Cloud Synced
-                        </span>
+                        <span className="text-xs font-medium text-primary">Cloud Synced</span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          Not Connected
-                        </span>
+                        <span className="text-xs text-muted-foreground">Not Connected</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions */}
                   {!isLoggedIn && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Theme</span>
@@ -110,7 +98,6 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
                     <KeyboardShortcuts />
                   </div>
 
-                  {/* Settings (for logged-in users) */}
                   {isLoggedIn && userId && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Settings</span>
@@ -118,8 +105,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
                     </div>
                   )}
 
-                  {/* Auth Button */}
-                  <div className="pt-2 border-t border-border/50">
+                  <div className="pt-2 border-t border-border">
                     <AuthButton />
                   </div>
                 </div>
@@ -129,14 +115,12 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
         )}
       </AnimatePresence>
 
-      {/* Desktop Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 hidden md:block">
-        <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      {/* Desktop Header - Material AppBar */}
+      <header className="sticky top-0 z-50 bg-primary text-primary-foreground shadow-[var(--shadow-3)] hidden md:block">
+        <div className="container max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-primary rounded-lg">
-              <Clipboard className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm">Clip-Board</span>
+            <Clipboard className="h-5 w-5" />
+            <span className="font-medium text-lg tracking-wide">Clip-Board</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -144,9 +128,9 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               <SessionTimer startTime={sessionStart} />
             )}
             {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-full">
-                <Cloud className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-medium text-primary">Synced</span>
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-primary-foreground/15 rounded-full">
+                <Cloud className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Synced</span>
               </div>
             )}
             <KeyboardShortcuts />

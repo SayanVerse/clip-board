@@ -343,7 +343,7 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
   };
 
   return (
-    <Card className="p-4 border border-border">
+    <Card className="p-4 shadow-[var(--shadow-2)]">
       <Tabs value={mode} onValueChange={(v) => setMode(v as "text" | "code")} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-3 h-9">
           <TabsTrigger value="text" className="text-xs">
