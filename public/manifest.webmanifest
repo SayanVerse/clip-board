@@ -1,0 +1,15 @@
+{
+  "name": "Clip-Board - Cross Device Clipboard",
+  "short_name": "Clip-Board",
+  "description": "Share clipboard content across devices instantly with secure 4-digit codes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon" },
+    { "src": "/og-image.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
