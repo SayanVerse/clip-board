@@ -239,8 +239,15 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
                     placeholder="0000"
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && joinCode.length === 4 && !isLoading) {
+                        e.preventDefault();
+                        joinSession();
+                      }
+                    }}
                     maxLength={4}
                     className="text-center text-lg tracking-[0.5em] font-mono h-9"
+                    autoFocus
                   />
                   <Button 
                     onClick={() => setShowScanner(true)} 
@@ -312,6 +319,12 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
                 placeholder="0000"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && joinCode.length === 4 && !isLoading) {
+                    e.preventDefault();
+                    joinSession();
+                  }
+                }}
                 maxLength={4}
                 className="text-center text-lg tracking-[0.5em] font-mono h-9"
               />

@@ -12,6 +12,7 @@ import { useTheme } from "next-themes";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { feedback } from "@/hooks/useFeedback";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AIClipActions } from "./AIClipActions";
 interface ClipboardItem {
   id: string;
   content_type: "text" | "file" | "code";
@@ -343,6 +344,13 @@ export const ClipboardHistory = ({
                                   </Button>}
                               </div>}
                           </Collapsible>}
+
+                        {/* AI actions for text/code items */}
+                        {(item.content_type === "text" || item.content_type === "code") && item.content && (
+                          <div className="mt-2">
+                            <AIClipActions content={item.content} contentType={item.content_type} />
+                          </div>
+                        )}
                         
                         {/* File Content */}
                         {item.content_type === "file" && <>
