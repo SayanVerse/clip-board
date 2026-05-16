@@ -9,6 +9,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QRScanner } from "./QRScanner";
 import { FancyQRCode } from "./FancyQRCode";
 import { feedback } from "@/hooks/useFeedback";
+import { SessionDevices } from "./SessionDevices";
+import { getDeviceId } from "@/lib/deviceId";
+
+const getDeviceName = () => {
+  const ua = navigator.userAgent;
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? "Android Phone" : "Android Tablet";
+  if (/Macintosh/i.test(ua)) return "Mac";
+  if (/Windows/i.test(ua)) return "Windows PC";
+  if (/Linux/i.test(ua)) return "Linux PC";
+  return "Desktop";
+};
+
+const registerDevice = async (sessionId: string) => {
+  await supabase
+    .from("session_devices")
+    .upsert(
+      {
+        session_id: sessionId,
+        device_id: getDeviceId(),
+        device_name: getDeviceName(),
+        last_seen: new Date().toISOString(),
+      },
+      { onConflict: "session_id,device_id" },
+    );
+};
 
 interface SessionManagerProps {
   sessionId: string | null;
@@ -43,12 +70,13 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
 
       const { data: session, error } = await supabase
         .from("sessions")
-        .insert({ session_code: code.data })
+        .insert({ session_code: code.data, creator_device_id: getDeviceId() })
         .select()
         .single();
 
       if (error) throw error;
 
+      await registerDevice(session.id);
       onSessionChange(session.id, session.session_code);
       toast.success(`Session created: ${session.session_code}`);
       feedback.success();
@@ -88,6 +116,7 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
         return;
       }
 
+      await registerDevice(session.id);
       onSessionChange(session.id, session.session_code);
       toast.success("Joined session");
       feedback.success();
@@ -100,7 +129,14 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
     }
   };
 
-  const leaveSession = () => {
+  const leaveSession = async () => {
+    if (sessionId) {
+      await supabase
+        .from("session_devices")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("device_id", getDeviceId());
+    }
     onSessionChange(null, null);
     toast.info("Left session");
   };
@@ -193,6 +229,11 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
           <p className="text-[10px] text-muted-foreground text-center mt-3">
             Share code or scan QR to sync
           </p>
+
+          <SessionDevices
+            sessionId={sessionId}
+            onKicked={() => onSessionChange(null, null)}
+          />
         </Card>
       </motion.div>
     );

@@ -27,7 +27,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
             <div className="p-2 bg-primary rounded-full">
               <Clipboard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-medium text-base text-foreground">Clip-Board</span>
+            <span className="font-medium text-base text-foreground">SyncHub</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
             <div className="p-2 bg-primary rounded-full">
               <Clipboard className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-medium text-xl text-foreground">Clip-Board</span>
+            <span className="font-medium text-xl text-foreground">SyncHub</span>
           </div>
           
           <div className="flex items-center gap-2">

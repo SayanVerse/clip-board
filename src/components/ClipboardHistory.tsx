@@ -285,7 +285,12 @@ export const ClipboardHistory = ({
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[11px] font-medium text-muted-foreground">{item.device_name || "Unknown"}</span>
                           <span className="text-[10px] text-muted-foreground/60">•</span>
-                          <span className="text-[11px] text-muted-foreground/80">{formatTime(item.created_at)}</span>
+                          <span
+                            className="text-[11px] text-muted-foreground/80"
+                            title={new Date(item.created_at).toLocaleString()}
+                          >
+                            {formatTime(item.created_at)} · {new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
                           {item.content_type === "code" && item.language && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wide">
                               {item.language}
                             </span>}

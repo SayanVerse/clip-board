@@ -91,9 +91,45 @@ export type Database = {
         }
         Relationships: []
       }
+      session_devices: {
+        Row: {
+          device_id: string
+          device_name: string
+          id: string
+          joined_at: string
+          last_seen: string
+          session_id: string
+        }
+        Insert: {
+          device_id: string
+          device_name?: string
+          id?: string
+          joined_at?: string
+          last_seen?: string
+          session_id: string
+        }
+        Update: {
+          device_id?: string
+          device_name?: string
+          id?: string
+          joined_at?: string
+          last_seen?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_devices_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           created_at: string
+          creator_device_id: string | null
           expires_at: string
           id: string
           last_activity: string
@@ -101,6 +137,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_device_id?: string | null
           expires_at?: string
           id?: string
           last_activity?: string
@@ -108,6 +145,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_device_id?: string | null
           expires_at?: string
           id?: string
           last_activity?: string
