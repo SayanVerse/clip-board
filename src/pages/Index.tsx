@@ -296,7 +296,7 @@ const Index = () => {
 
       <footer className="border-t border-border py-5 mt-auto bg-card">
         <div className="container max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} Clip-Board</span>
+          <span>© {new Date().getFullYear()} SyncHub</span>
           <span className="hidden sm:inline text-muted-foreground/40">·</span>
           <a href="/contact" className="hover:text-primary transition-colors">Contact Developer</a>
         </div>

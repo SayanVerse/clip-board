@@ -1,6 +1,6 @@
 {
-  "name": "Clip-Board - Cross Device Clipboard",
-  "short_name": "Clip-Board",
+  "name": "SyncHub - Cross Device Clipboard",
+  "short_name": "SyncHub",
   "description": "Share clipboard content across devices instantly with secure 4-digit codes.",
   "start_url": "/",
   "scope": "/",
