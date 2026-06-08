@@ -117,14 +117,14 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
         )}
       </AnimatePresence>
 
-      {/* Desktop Header - Google style surface */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border shadow-[var(--shadow-1)] hidden md:block">
+      {/* Desktop Header — liquid glass */}
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/40 hidden md:block">
         <div className="container max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary rounded-full">
-              <Clipboard className="h-5 w-5 text-primary-foreground" />
+            <div className="p-2 bg-foreground rounded-full">
+              <Clipboard className="h-5 w-5 text-background" />
             </div>
-            <span className="font-medium text-xl text-foreground">SyncHub</span>
+            <span className="font-semibold text-xl tracking-tight text-foreground">SyncHub</span>
           </div>
           
           <div className="flex items-center gap-2">
