@@ -43,20 +43,19 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a code language detector. Analyze the given code and respond ONLY with a single word - the programming language name in lowercase. 
-            
-Valid responses: javascript, typescript, python, java, cpp, csharp, php, ruby, go, rust, html, css, json, xml, sql, markdown, yaml, shell, swift, kotlin, scala, dart, r, perl, lua, haskell, elixir, clojure, graphql, dockerfile, makefile, plaintext
+            content: `You are an expert programming-language detector. Identify the language of the snippet — it can be ANY programming, scripting, markup, query, config, or shader language in the world (well-known or obscure: e.g. javascript, typescript, python, rust, go, kotlin, swift, dart, elixir, gleam, zig, nim, crystal, ocaml, fsharp, scala, julia, fortran, cobol, ada, prolog, scheme, racket, lisp, haskell, idris, agda, solidity, move, vyper, cairo, wgsl, hlsl, glsl, verilog, vhdl, tcl, autohotkey, applescript, postscript, latex, vue, svelte, astro, prisma, terraform, hcl, nix, ini, toml, env, etc.).
 
-If uncertain or not code, respond with: plaintext
-
-Do not include any explanation, punctuation, or additional text.`,
+Rules:
+- Reply with ONLY the canonical language name in lowercase (one word, no version, no description, no punctuation, no markdown).
+- Use a single common slug (e.g. "c++" -> "cpp", "c#" -> "csharp", "objective-c" -> "objectivec", "f#" -> "fsharp").
+- If it is clearly NOT source code or you genuinely cannot tell, reply: plaintext`,
           },
           {
             role: "user",
             content: truncatedCode,
           },
         ],
-        max_tokens: 20,
+        max_tokens: 12,
         temperature: 0,
       }),
     });
@@ -71,17 +70,30 @@ Do not include any explanation, punctuation, or additional text.`,
     }
 
     const data = await response.json();
-    const detectedLanguage = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "plaintext";
+    let detectedLanguage = (data.choices?.[0]?.message?.content || "plaintext")
+      .trim()
+      .toLowerCase()
+      .replace(/[`"'.,;:!?]/g, "")
+      .split(/\s+/)[0] || "plaintext";
 
-    // Validate the response is a known language
-    const validLanguages = [
-      "javascript", "typescript", "python", "java", "cpp", "csharp", "php", "ruby",
-      "go", "rust", "html", "css", "json", "xml", "sql", "markdown", "yaml", "shell",
-      "swift", "kotlin", "scala", "dart", "r", "perl", "lua", "haskell", "elixir",
-      "clojure", "graphql", "dockerfile", "makefile", "plaintext"
-    ];
+    // Normalize a few common aliases
+    const aliases: Record<string, string> = {
+      "c++": "cpp",
+      "c#": "csharp",
+      "f#": "fsharp",
+      "objective-c": "objectivec",
+      "obj-c": "objectivec",
+      "js": "javascript",
+      "ts": "typescript",
+      "py": "python",
+      "rb": "ruby",
+      "sh": "shell",
+      "bash": "shell",
+      "zsh": "shell",
+    };
+    detectedLanguage = aliases[detectedLanguage] ?? detectedLanguage;
 
-    const language = validLanguages.includes(detectedLanguage) ? detectedLanguage : "plaintext";
+    const language = detectedLanguage || "plaintext";
 
     return new Response(
       JSON.stringify({ language, isCode: language !== "plaintext" }),
