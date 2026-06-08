@@ -266,11 +266,42 @@
     100% { transform: translate(60px, 40px) scale(1.15); }
   }
 
-  .animate-in { animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .animate-in { animation: fadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* Indeterminate liquid progress */
+  .liquid-progress-bar {
+    background: linear-gradient(90deg,
+      hsl(var(--foreground) / 0.0) 0%,
+      hsl(var(--foreground) / 0.85) 40%,
+      hsl(var(--foreground) / 0.85) 60%,
+      hsl(var(--foreground) / 0.0) 100%);
+    box-shadow: 0 0 12px hsl(var(--foreground) / 0.35);
+    animation: liquidSlide 1.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  }
+  @keyframes liquidSlide {
+    0%   { transform: translateX(-110%); }
+    100% { transform: translateX(310%); }
+  }
+
+  /* Soft float for glass surfaces on appear */
+  .glass-float {
+    animation: glassFloat 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes glassFloat {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); filter: blur(4px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  /* Subtle pulse for active session indicator */
+  @keyframes softPulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+  .animate-soft-pulse { animation: softPulse 2s ease-in-out infinite; }
 
   .scrollbar-themed::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-themed::-webkit-scrollbar-track { background: transparent; }
