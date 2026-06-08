@@ -10,6 +10,7 @@ import { QRScanner } from "./QRScanner";
 import { FancyQRCode } from "./FancyQRCode";
 import { feedback } from "@/hooks/useFeedback";
 import { SessionDevices } from "./SessionDevices";
+import { LiquidProgress } from "./LiquidProgress";
 import { getDeviceId } from "@/lib/deviceId";
 
 const getDeviceName = () => {
