@@ -66,7 +66,8 @@ export default {
         'smooth': 'var(--transition-smooth)',
       },
       fontFamily: {
-        'sans': ['Google Sans', 'Roboto', 'system-ui', '-apple-system', 'sans-serif'],
+        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'SF Mono', 'Menlo', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
