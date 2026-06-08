@@ -20,14 +20,14 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
 
   return (
     <>
-      {/* Mobile Header - Google style */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border shadow-[var(--shadow-1)] md:hidden">
+      {/* Mobile Header — liquid glass */}
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/40 md:hidden">
         <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary rounded-full">
-              <Clipboard className="h-4 w-4 text-primary-foreground" />
+            <div className="p-2 bg-foreground rounded-full">
+              <Clipboard className="h-4 w-4 text-background" />
             </div>
-            <span className="font-medium text-base text-foreground">SyncHub</span>
+            <span className="font-semibold text-base tracking-tight text-foreground">SyncHub</span>
           </div>
           
           <div className="flex items-center gap-2">
