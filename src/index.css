@@ -213,16 +213,17 @@
   .liquid-btn::after {
     content: '';
     position: absolute;
-    top: 0; left: -120%;
-    width: 60%; height: 100%;
-    background: linear-gradient(115deg, transparent 20%, hsl(var(--glass-highlight)) 50%, transparent 80%);
-    transform: skewX(-20deg);
-    transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    top: 0; left: -130%;
+    width: 65%; height: 100%;
+    background: linear-gradient(115deg, transparent 18%, hsl(var(--glass-highlight)) 50%, transparent 82%);
+    transform: skewX(-22deg);
+    transition: left 0.85s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
     z-index: 0;
+    will-change: left;
   }
 
-  .liquid-btn:hover::after { left: 140%; }
+  .liquid-btn:hover::after { left: 150%; }
 
   .liquid-btn > * { position: relative; z-index: 1; }
 
