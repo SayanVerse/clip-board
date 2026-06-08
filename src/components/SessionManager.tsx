@@ -355,9 +355,22 @@ export const SessionManager = ({ sessionId, sessionCode, onSessionChange, initia
               size="sm"
             >
               <QrCode className="mr-2 h-4 w-4" />
-              Generate Code
+              {isLoading ? "Generating…" : "Generate Code"}
             </Button>
           </div>
+
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <LiquidProgress label="Setting things up" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
