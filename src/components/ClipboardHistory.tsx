@@ -43,6 +43,7 @@ export const ClipboardHistory = ({
   const {
     theme
   } = useTheme();
+  const detectingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     loadHistory();
     const unsubscribe = subscribeToChanges();
@@ -53,6 +54,32 @@ export const ClipboardHistory = ({
     }
     return unsubscribe;
   }, [sessionId, userId]);
+
+  // Post-insert AI language detection for code items lacking a real language
+  useEffect(() => {
+    const needsDetection = items.filter(
+      (it) =>
+        it.content_type === "code" &&
+        it.content &&
+        it.content.length > 20 &&
+        (!it.language || it.language === "plaintext" || it.language === "auto") &&
+        !detectingRef.current.has(it.id),
+    );
+    needsDetection.forEach(async (it) => {
+      detectingRef.current.add(it.id);
+      try {
+        const { data } = await supabase.functions.invoke("detect-language", {
+          body: { code: it.content },
+        });
+        const lang = data?.language;
+        if (lang && lang !== "plaintext" && lang !== it.language) {
+          await supabase.from("clipboard_items").update({ language: lang }).eq("id", it.id);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  }, [items]);
   const loadHistory = async () => {
     setIsLoading(true);
     try {
