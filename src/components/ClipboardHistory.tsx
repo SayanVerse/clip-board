@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { feedback } from "@/hooks/useFeedback";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AIClipActions } from "./AIClipActions";
+import { getLangMeta } from "@/lib/languageColors";
+import { linkify, isUrlOnly } from "@/lib/linkify";
 interface ClipboardItem {
   id: string;
   content_type: "text" | "file" | "code";
@@ -41,6 +43,7 @@ export const ClipboardHistory = ({
   const {
     theme
   } = useTheme();
+  const detectingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     loadHistory();
     const unsubscribe = subscribeToChanges();
@@ -51,6 +54,32 @@ export const ClipboardHistory = ({
     }
     return unsubscribe;
   }, [sessionId, userId]);
+
+  // Post-insert AI language detection for code items lacking a real language
+  useEffect(() => {
+    const needsDetection = items.filter(
+      (it) =>
+        it.content_type === "code" &&
+        it.content &&
+        it.content.length > 20 &&
+        (!it.language || it.language === "plaintext" || it.language === "auto") &&
+        !detectingRef.current.has(it.id),
+    );
+    needsDetection.forEach(async (it) => {
+      detectingRef.current.add(it.id);
+      try {
+        const { data } = await supabase.functions.invoke("detect-language", {
+          body: { code: it.content },
+        });
+        const lang = data?.language;
+        if (lang && lang !== "plaintext" && lang !== it.language) {
+          await supabase.from("clipboard_items").update({ language: lang }).eq("id", it.id);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  }, [items]);
   const loadHistory = async () => {
     setIsLoading(true);
     try {
@@ -253,23 +282,44 @@ export const ClipboardHistory = ({
             <p className="text-xs text-muted-foreground mt-1">Start by sending text, code, or files</p>
           </div> : <div className="space-y-3 pr-3">
             <AnimatePresence mode="popLayout">
-              {items.map(item => <motion.div key={item.id} initial={{
-            opacity: 0,
-            y: 20,
-            scale: 0.95
-          }} animate={{
-            opacity: deletingId === item.id ? 0 : 1,
-            y: 0,
-            scale: deletingId === item.id ? 0.8 : 1,
-            x: deletingId === item.id ? 100 : 0
-          }} exit={{
-            opacity: 0,
-            scale: 0.8,
-            x: 100
-          }} transition={{
-            duration: 0.25,
-            ease: [0.4, 0, 0.2, 1]
-          }} layout>
+              {items.map(item => {
+                const isLink = item.content_type === "text" && isUrlOnly(item.content);
+                const langMeta = item.content_type === "code" ? getLangMeta(item.language) : null;
+                const detecting = item.content_type === "code" && (!item.language || item.language === "plaintext" || item.language === "auto");
+                return <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{
+                    opacity: deletingId === item.id ? 0 : 1,
+                    y: 0,
+                    scale: deletingId === item.id ? 0.8 : 1,
+                    x: deletingId === item.id ? 100 : 0,
+                  }}
+                  exit={{ opacity: 0, scale: 0.8, x: -200 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  layout
+                  className="relative"
+                >
+                  {/* Swipe-left reveal: delete background */}
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-destructive/15 border border-destructive/30 flex items-center justify-end pr-6">
+                    <div className="flex items-center gap-2 text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                      <span className="text-xs font-medium">Release to delete</span>
+                    </div>
+                  </div>
+                  <motion.div
+                    drag="x"
+                    dragConstraints={{ left: -180, right: 0 }}
+                    dragElastic={0.15}
+                    dragMomentum={false}
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x < -100) {
+                        deleteItem(item.id);
+                      }
+                    }}
+                    whileDrag={{ cursor: "grabbing" }}
+                    className="relative"
+                  >
                   <div className={`group p-4 rounded-2xl border border-border transition-all duration-200 overflow-hidden ${item.is_pinned ? 'bg-accent border-primary/30' : 'bg-card hover:shadow-[var(--shadow-1)]'}`}>
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Icon */}
@@ -291,16 +341,35 @@ export const ClipboardHistory = ({
                           >
                             {formatTime(item.created_at)} · {new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
-                          {item.content_type === "code" && item.language && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wide">
-                              {item.language}
-                            </span>}
+                          {item.content_type === "code" && langMeta && (
+                            <span
+                              className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
+                              style={{
+                                color: langMeta.color,
+                                borderColor: `${langMeta.color}55`,
+                                background: `${langMeta.color}15`,
+                              }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: langMeta.color, boxShadow: `0 0 6px ${langMeta.color}` }}
+                              />
+                              {detecting ? "Detecting…" : langMeta.label}
+                              {detecting && <Sparkles className="h-2.5 w-2.5 animate-pulse" />}
+                            </span>
+                          )}
+                          {isLink && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide bg-primary/10 text-primary border border-primary/30">
+                              <LinkIcon className="h-2.5 w-2.5" /> Link
+                            </span>
+                          )}
                         </div>
                         
                         {/* Text Content with expand/collapse */}
                         {item.content_type === "text" && <Collapsible open={expandedItems.has(item.id)}>
                             <div className="relative">
                               <p className={`text-sm break-all whitespace-pre-wrap max-w-full overflow-hidden ${!expandedItems.has(item.id) && isLongContent(item.content) ? 'line-clamp-3' : ''}`}>
-                                {item.content}
+                                {item.content ? linkify(item.content) : null}
                               </p>
                               {isLongContent(item.content) && <CollapsibleTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary hover:text-primary mt-1" onClick={() => toggleExpand(item.id)}>
@@ -386,7 +455,9 @@ export const ClipboardHistory = ({
                       </div>
                     </div>
                   </div>
-                </motion.div>)}
+                  </motion.div>
+                </motion.div>;
+              })}
             </AnimatePresence>
           </div>}
       </ScrollArea>

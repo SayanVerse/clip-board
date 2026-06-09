@@ -68,35 +68,35 @@
   }
 
   .dark {
-    /* Minimal B&W — Dark */
-    --background: 0 0% 6%;
-    --foreground: 0 0% 96%;
+    /* Pitch Black — Dark */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 96%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 6%;
-    --primary-glow: 0 0% 80%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --primary-glow: 0 0% 85%;
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 62%;
+    --muted: 0 0% 7%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 96%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 70% 55%;
+    --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 90%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 0 0% 100%;
 
     /* Liquid glass tokens — dark */
     --glass-bg: 0 0% 100% / 0.06;
