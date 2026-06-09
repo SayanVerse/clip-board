@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Sparkles } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,10 +40,10 @@ export const ClipboardHistory = ({
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<ClipboardItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [detectingIds, setDetectingIds] = useState<Set<string>>(new Set());
   const {
     theme
   } = useTheme();
-  const detectingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     loadHistory();
     const unsubscribe = subscribeToChanges();
@@ -63,10 +63,17 @@ export const ClipboardHistory = ({
         it.content &&
         it.content.length > 20 &&
         (!it.language || it.language === "plaintext" || it.language === "auto") &&
-        !detectingRef.current.has(it.id),
+        !detectingIds.has(it.id),
     );
+    if (needsDetection.length === 0) return;
+
+    setDetectingIds(prev => {
+      const next = new Set(prev);
+      needsDetection.forEach(it => next.add(it.id));
+      return next;
+    });
+
     needsDetection.forEach(async (it) => {
-      detectingRef.current.add(it.id);
       try {
         const { data } = await supabase.functions.invoke("detect-language", {
           body: { code: it.content },
@@ -77,6 +84,12 @@ export const ClipboardHistory = ({
         }
       } catch (e) {
         // ignore
+      } finally {
+        setDetectingIds(prev => {
+          const next = new Set(prev);
+          next.delete(it.id);
+          return next;
+        });
       }
     });
   }, [items]);
