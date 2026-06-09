@@ -341,16 +341,35 @@ export const ClipboardHistory = ({
                           >
                             {formatTime(item.created_at)} · {new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
-                          {item.content_type === "code" && item.language && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold uppercase tracking-wide">
-                              {item.language}
-                            </span>}
+                          {item.content_type === "code" && langMeta && (
+                            <span
+                              className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
+                              style={{
+                                color: langMeta.color,
+                                borderColor: `${langMeta.color}55`,
+                                background: `${langMeta.color}15`,
+                              }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: langMeta.color, boxShadow: `0 0 6px ${langMeta.color}` }}
+                              />
+                              {detecting ? "Detecting…" : langMeta.label}
+                              {detecting && <Sparkles className="h-2.5 w-2.5 animate-pulse" />}
+                            </span>
+                          )}
+                          {isLink && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide bg-primary/10 text-primary border border-primary/30">
+                              <LinkIcon className="h-2.5 w-2.5" /> Link
+                            </span>
+                          )}
                         </div>
                         
                         {/* Text Content with expand/collapse */}
                         {item.content_type === "text" && <Collapsible open={expandedItems.has(item.id)}>
                             <div className="relative">
                               <p className={`text-sm break-all whitespace-pre-wrap max-w-full overflow-hidden ${!expandedItems.has(item.id) && isLongContent(item.content) ? 'line-clamp-3' : ''}`}>
-                                {item.content}
+                                {item.content ? linkify(item.content) : null}
                               </p>
                               {isLongContent(item.content) && <CollapsibleTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary hover:text-primary mt-1" onClick={() => toggleExpand(item.id)}>
