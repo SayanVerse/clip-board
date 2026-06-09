@@ -358,17 +358,17 @@ export const ClipboardHistory = ({
                             <span
                               className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
                               style={{
-                                color: langMeta.color,
-                                borderColor: `${langMeta.color}55`,
-                                background: `${langMeta.color}15`,
+                                color: isDetecting ? "#9ca3af" : langMeta.color,
+                                borderColor: isDetecting ? "#9ca3af55" : `${langMeta.color}55`,
+                                background: isDetecting ? "#9ca3af15" : `${langMeta.color}15`,
                               }}
                             >
                               <span
                                 className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: langMeta.color, boxShadow: `0 0 6px ${langMeta.color}` }}
+                                style={{ background: isDetecting ? "#9ca3af" : langMeta.color, boxShadow: isDetecting ? "none" : `0 0 6px ${langMeta.color}` }}
                               />
-                              {detecting ? "Detecting…" : langMeta.label}
-                              {detecting && <Sparkles className="h-2.5 w-2.5 animate-pulse" />}
+                              {isDetecting ? "Detecting…" : langMeta.label}
+                              {isDetecting && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
                             </span>
                           )}
                           {isLink && (
