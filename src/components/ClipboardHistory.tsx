@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Sparkles } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,10 +40,10 @@ export const ClipboardHistory = ({
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<ClipboardItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [detectingIds, setDetectingIds] = useState<Set<string>>(new Set());
   const {
     theme
   } = useTheme();
-  const detectingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     loadHistory();
     const unsubscribe = subscribeToChanges();
@@ -63,10 +63,17 @@ export const ClipboardHistory = ({
         it.content &&
         it.content.length > 20 &&
         (!it.language || it.language === "plaintext" || it.language === "auto") &&
-        !detectingRef.current.has(it.id),
+        !detectingIds.has(it.id),
     );
+    if (needsDetection.length === 0) return;
+
+    setDetectingIds(prev => {
+      const next = new Set(prev);
+      needsDetection.forEach(it => next.add(it.id));
+      return next;
+    });
+
     needsDetection.forEach(async (it) => {
-      detectingRef.current.add(it.id);
       try {
         const { data } = await supabase.functions.invoke("detect-language", {
           body: { code: it.content },
@@ -77,6 +84,12 @@ export const ClipboardHistory = ({
         }
       } catch (e) {
         // ignore
+      } finally {
+        setDetectingIds(prev => {
+          const next = new Set(prev);
+          next.delete(it.id);
+          return next;
+        });
       }
     });
   }, [items]);
@@ -285,7 +298,7 @@ export const ClipboardHistory = ({
               {items.map(item => {
                 const isLink = item.content_type === "text" && isUrlOnly(item.content);
                 const langMeta = item.content_type === "code" ? getLangMeta(item.language) : null;
-                const detecting = item.content_type === "code" && (!item.language || item.language === "plaintext" || item.language === "auto");
+                const isDetecting = item.content_type === "code" && detectingIds.has(item.id);
                 return <motion.div
                   key={item.id}
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -345,17 +358,17 @@ export const ClipboardHistory = ({
                             <span
                               className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
                               style={{
-                                color: langMeta.color,
-                                borderColor: `${langMeta.color}55`,
-                                background: `${langMeta.color}15`,
+                                color: isDetecting ? "#9ca3af" : langMeta.color,
+                                borderColor: isDetecting ? "#9ca3af55" : `${langMeta.color}55`,
+                                background: isDetecting ? "#9ca3af15" : `${langMeta.color}15`,
                               }}
                             >
                               <span
                                 className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: langMeta.color, boxShadow: `0 0 6px ${langMeta.color}` }}
+                                style={{ background: isDetecting ? "#9ca3af" : langMeta.color, boxShadow: isDetecting ? "none" : `0 0 6px ${langMeta.color}` }}
                               />
-                              {detecting ? "Detecting…" : langMeta.label}
-                              {detecting && <Sparkles className="h-2.5 w-2.5 animate-pulse" />}
+                              {isDetecting ? "Detecting…" : langMeta.label}
+                              {isDetecting && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
                             </span>
                           )}
                           {isLink && (
