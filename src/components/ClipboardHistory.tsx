@@ -298,7 +298,7 @@ export const ClipboardHistory = ({
               {items.map(item => {
                 const isLink = item.content_type === "text" && isUrlOnly(item.content);
                 const langMeta = item.content_type === "code" ? getLangMeta(item.language) : null;
-                const detecting = item.content_type === "code" && (!item.language || item.language === "plaintext" || item.language === "auto");
+                const isDetecting = item.content_type === "code" && detectingIds.has(item.id);
                 return <motion.div
                   key={item.id}
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
