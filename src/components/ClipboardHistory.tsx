@@ -282,23 +282,44 @@ export const ClipboardHistory = ({
             <p className="text-xs text-muted-foreground mt-1">Start by sending text, code, or files</p>
           </div> : <div className="space-y-3 pr-3">
             <AnimatePresence mode="popLayout">
-              {items.map(item => <motion.div key={item.id} initial={{
-            opacity: 0,
-            y: 20,
-            scale: 0.95
-          }} animate={{
-            opacity: deletingId === item.id ? 0 : 1,
-            y: 0,
-            scale: deletingId === item.id ? 0.8 : 1,
-            x: deletingId === item.id ? 100 : 0
-          }} exit={{
-            opacity: 0,
-            scale: 0.8,
-            x: 100
-          }} transition={{
-            duration: 0.25,
-            ease: [0.4, 0, 0.2, 1]
-          }} layout>
+              {items.map(item => {
+                const isLink = item.content_type === "text" && isUrlOnly(item.content);
+                const langMeta = item.content_type === "code" ? getLangMeta(item.language) : null;
+                const detecting = item.content_type === "code" && (!item.language || item.language === "plaintext" || item.language === "auto");
+                return <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{
+                    opacity: deletingId === item.id ? 0 : 1,
+                    y: 0,
+                    scale: deletingId === item.id ? 0.8 : 1,
+                    x: deletingId === item.id ? 100 : 0,
+                  }}
+                  exit={{ opacity: 0, scale: 0.8, x: -200 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  layout
+                  className="relative"
+                >
+                  {/* Swipe-left reveal: delete background */}
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-destructive/15 border border-destructive/30 flex items-center justify-end pr-6">
+                    <div className="flex items-center gap-2 text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                      <span className="text-xs font-medium">Release to delete</span>
+                    </div>
+                  </div>
+                  <motion.div
+                    drag="x"
+                    dragConstraints={{ left: -180, right: 0 }}
+                    dragElastic={0.15}
+                    dragMomentum={false}
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x < -100) {
+                        deleteItem(item.id);
+                      }
+                    }}
+                    whileDrag={{ cursor: "grabbing" }}
+                    className="relative"
+                  >
                   <div className={`group p-4 rounded-2xl border border-border transition-all duration-200 overflow-hidden ${item.is_pinned ? 'bg-accent border-primary/30' : 'bg-card hover:shadow-[var(--shadow-1)]'}`}>
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Icon */}
