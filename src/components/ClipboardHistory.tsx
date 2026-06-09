@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, Download, FileText, Trash2, Code2, Maximize2, X, RefreshCw, Pin, PinOff, ChevronDown, ChevronUp, Link as LinkIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { feedback } from "@/hooks/useFeedback";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AIClipActions } from "./AIClipActions";
+import { getLangMeta } from "@/lib/languageColors";
+import { linkify, isUrlOnly } from "@/lib/linkify";
 interface ClipboardItem {
   id: string;
   content_type: "text" | "file" | "code";
