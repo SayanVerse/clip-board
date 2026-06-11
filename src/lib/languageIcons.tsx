@@ -3,6 +3,7 @@ import {
   SiJavascript,
   SiTypescript,
   SiPython,
+
   SiCplusplus,
   SiSharp,
   SiGo,
@@ -27,7 +28,8 @@ import {
   SiSolidity,
   SiNim,
   SiZig,
-  SiGroovy,
+  SiGrocy as SiGroovy,
+
   SiHtml5,
   SiCss,
   SiSass,
@@ -47,7 +49,8 @@ import {
 } from "react-icons/si";
 import { FileCode2 } from "lucide-react";
 
-type IconType = ComponentType<{ className?: string; size?: number; color?: string }>;
+type IconType = ComponentType<any>;
+
 
 const ICONS: Record<string, IconType> = {
   javascript: SiJavascript,
