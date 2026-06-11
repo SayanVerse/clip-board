@@ -28,7 +28,6 @@ import {
   SiSolidity,
   SiNim,
   SiZig,
-  SiGrocy as SiGroovy,
 
   SiHtml5,
   SiCss,
@@ -84,7 +83,6 @@ const ICONS: Record<string, IconType> = {
   solidity: SiSolidity,
   nim: SiNim,
   zig: SiZig,
-  groovy: SiGroovy,
   html: SiHtml5,
   css: SiCss,
   scss: SiSass,
