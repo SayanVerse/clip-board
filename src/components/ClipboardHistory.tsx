@@ -14,6 +14,8 @@ import { feedback } from "@/hooks/useFeedback";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AIClipActions } from "./AIClipActions";
 import { getLangMeta } from "@/lib/languageColors";
+import { getLangIcon } from "@/lib/languageIcons";
+
 import { linkify, isUrlOnly } from "@/lib/linkify";
 interface ClipboardItem {
   id: string;
@@ -317,23 +319,27 @@ export const ClipboardHistory = ({
                           >
                             {formatTime(item.created_at)} · {new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
-                          {item.content_type === "code" && langMeta && (
-                            <span
-                              className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
-                              style={{
-                                color: isDetecting ? "#9ca3af" : langMeta.color,
-                                borderColor: isDetecting ? "#9ca3af55" : `${langMeta.color}55`,
-                                background: isDetecting ? "#9ca3af15" : `${langMeta.color}15`,
-                              }}
-                            >
+                          {item.content_type === "code" && langMeta && (() => {
+                            const LangIcon = getLangIcon(item.language);
+                            return (
                               <span
-                                className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: isDetecting ? "#9ca3af" : langMeta.color, boxShadow: isDetecting ? "none" : `0 0 6px ${langMeta.color}` }}
-                              />
-                              {isDetecting ? "Detecting…" : langMeta.label}
-                              {isDetecting && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
-                            </span>
-                          )}
+                                className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
+                                style={{
+                                  color: isDetecting ? "#9ca3af" : langMeta.color,
+                                  borderColor: isDetecting ? "#9ca3af55" : `${langMeta.color}55`,
+                                  background: isDetecting ? "#9ca3af15" : `${langMeta.color}15`,
+                                }}
+                              >
+                                {isDetecting ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <LangIcon size={12} color={langMeta.color} />
+                                )}
+                                {isDetecting ? "Detecting…" : langMeta.label}
+                              </span>
+                            );
+                          })()}
+
                           {isLink && (
                             <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide bg-primary/10 text-primary border border-primary/30">
                               <LinkIcon className="h-2.5 w-2.5" /> Link
