@@ -54,45 +54,8 @@ export const ClipboardHistory = ({
     }
     return unsubscribe;
   }, [sessionId, userId]);
+  // Language detection now runs at send time in ClipboardInput, not here.
 
-  // Post-insert AI language detection for code items lacking a real language
-  useEffect(() => {
-    const needsDetection = items.filter(
-      (it) =>
-        it.content_type === "code" &&
-        it.content &&
-        it.content.length > 20 &&
-        (!it.language || it.language === "plaintext" || it.language === "auto") &&
-        !detectingIds.has(it.id),
-    );
-    if (needsDetection.length === 0) return;
-
-    setDetectingIds(prev => {
-      const next = new Set(prev);
-      needsDetection.forEach(it => next.add(it.id));
-      return next;
-    });
-
-    needsDetection.forEach(async (it) => {
-      try {
-        const { data } = await supabase.functions.invoke("detect-language", {
-          body: { code: it.content },
-        });
-        const lang = data?.language;
-        if (lang && lang !== "plaintext" && lang !== it.language) {
-          await supabase.from("clipboard_items").update({ language: lang }).eq("id", it.id);
-        }
-      } catch (e) {
-        // ignore
-      } finally {
-        setDetectingIds(prev => {
-          const next = new Set(prev);
-          next.delete(it.id);
-          return next;
-        });
-      }
-    });
-  }, [items]);
   const loadHistory = async () => {
     setIsLoading(true);
     try {
