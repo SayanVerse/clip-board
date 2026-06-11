@@ -321,19 +321,20 @@ export const ClipboardHistory = ({
                           </span>
                           {item.content_type === "code" && langMeta && (() => {
                             const LangIcon = getLangIcon(item.language);
+                            const badgeColor = isDetecting ? "#9ca3af" : langMeta.color;
+                            const textColor = isDetecting ? "#0a0a0a" : getContrastColor(badgeColor);
                             return (
                               <span
-                                className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border"
+                                className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border border-transparent"
                                 style={{
-                                  color: isDetecting ? "#9ca3af" : langMeta.color,
-                                  borderColor: isDetecting ? "#9ca3af55" : `${langMeta.color}55`,
-                                  background: isDetecting ? "#9ca3af15" : `${langMeta.color}15`,
+                                  color: textColor,
+                                  background: badgeColor,
                                 }}
                               >
                                 {isDetecting ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <LangIcon size={12} color={langMeta.color} />
+                                  <LangIcon size={12} color={textColor} />
                                 )}
                                 {isDetecting ? "Detecting…" : langMeta.label}
                               </span>
