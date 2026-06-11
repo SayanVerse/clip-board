@@ -117,6 +117,19 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
     }
   }, [code, mode, language, detectWithDebounce]);
 
+  const detectLanguageNow = async (content: string): Promise<string> => {
+    try {
+      const { data } = await supabase.functions.invoke("detect-language", {
+        body: { code: content },
+      });
+      return data?.language || "plaintext";
+    } catch {
+      return "plaintext";
+    }
+  };
+
+  const URL_ONLY_RE = /^(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)$/i;
+
   const sendContent = async (content: string, contentType: "text" | "code" = "text", detectedLang?: string) => {
     if (!content.trim()) return;
     if (!sessionId && !userId) {
@@ -126,22 +139,38 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
 
     setIsSending(true);
     try {
-      // For code mode with auto-detect, use detected language or fallback to plaintext
+      let finalType: "text" | "code" = contentType;
       let langToUse: string | null = null;
+
       if (contentType === "code") {
-        if (detectedLang && detectedLang !== "auto") {
+        if (detectedLang && detectedLang !== "auto" && detectedLang !== "") {
           langToUse = detectedLang;
-        } else if (language === "auto") {
-          langToUse = detectedLanguage || "plaintext";
-        } else {
+        } else if (language !== "auto") {
           langToUse = language;
+        } else if (detectedLanguage && detectedLanguage !== "plaintext") {
+          langToUse = detectedLanguage;
+        } else {
+          // Detect synchronously now (after send)
+          langToUse = await detectLanguageNow(content);
+        }
+      } else {
+        // Text mode: detect link or code at send time
+        const trimmed = content.trim();
+        const isLink = URL_ONLY_RE.test(trimmed);
+        if (!isLink && trimmed.length > 30) {
+          let lang = codeDetected && detectedLanguage !== "plaintext" ? detectedLanguage : "";
+          if (!lang) lang = await detectLanguageNow(trimmed);
+          if (lang && lang !== "plaintext") {
+            finalType = "code";
+            langToUse = lang;
+          }
         }
       }
-      
+
       const { error } = await supabase
         .from("clipboard_items")
         .insert({
-          content_type: contentType,
+          content_type: finalType,
           content: content,
           device_name: deviceName,
           language: langToUse,
@@ -151,13 +180,12 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
 
       if (error) throw error;
 
-      toast.success(contentType === "code" ? `Code sent (${langToUse})` : "Text sent");
+      toast.success(finalType === "code" ? `Code sent (${langToUse})` : "Sent");
       feedback.send();
-      
-      // Always clear both inputs to ensure clean state
+
       setText("");
       setCode("");
-      
+
       if (sessionId) {
         await supabase
           .from("sessions")
@@ -175,18 +203,11 @@ export const ClipboardInput = forwardRef<ClipboardInputHandle, ClipboardInputPro
 
   const sendText = async (content?: string) => {
     const textToSend = content || text;
-    
-    // In text mode, if code is detected, send as code with detected language
-    if (codeDetected && detectedLanguage !== "plaintext") {
-      await sendContent(textToSend, "code", detectedLanguage);
-    } else {
-      await sendContent(textToSend, "text");
-    }
+    await sendContent(textToSend, "text");
   };
 
   const sendCode = async () => {
-    // Use detected language if auto-detect is enabled
-    const finalLang = language === "auto" ? (detectedLanguage || "plaintext") : language;
+    const finalLang = language === "auto" ? (detectedLanguage || "") : language;
     await sendContent(code, "code", finalLang);
   };
 
