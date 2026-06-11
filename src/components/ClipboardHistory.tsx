@@ -13,7 +13,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { feedback } from "@/hooks/useFeedback";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AIClipActions } from "./AIClipActions";
-import { getLangMeta } from "@/lib/languageColors";
+import { getLangMeta, getContrastColor } from "@/lib/languageColors";
 import { getLangIcon } from "@/lib/languageIcons";
 
 import { linkify, isUrlOnly } from "@/lib/linkify";
