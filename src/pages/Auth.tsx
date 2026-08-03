@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+
 
 type AuthMode = "login" | "signup";
 
@@ -36,6 +38,10 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+
 
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
@@ -134,6 +140,43 @@ export default function Auth() {
     navigate("/");
   };
 
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter the 6-digit code from your email");
+      return;
+    }
+
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "signup",
+    });
+    setVerifying(false);
+
+    if (error) {
+      toast.error(error.message || "Invalid or expired code");
+    } else {
+      toast.success("Email verified — you're signed in!");
+      navigate("/");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setResending(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("A new code has been sent");
+    }
+  };
 
   if (emailSent) {
     return (
@@ -158,32 +201,71 @@ export default function Auth() {
               </motion.div>
               <CardTitle className="text-2xl font-bold">Verify Your Email</CardTitle>
               <CardDescription className="text-base">
-                We've sent a verification link to <strong>{email}</strong>
+                We've sent a verification code to <strong>{email}</strong>
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-6">
+              <div className="flex flex-col items-center gap-4">
+                <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+                  <Button
+                    className="w-full gap-2 h-11"
+                    onClick={handleVerifyOtp}
+                    disabled={verifying || otp.length !== 6}
+                  >
+                    {verifying ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full"
+                      />
+                    ) : (
+                      <>
+                        Verify &amp; Continue
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
+
               <Alert className="border-primary/50 bg-primary/5">
                 <AlertCircle className="h-4 w-4 text-primary" />
                 <AlertDescription>
-                  Please check your email and click the verification link to complete your registration. 
-                  After verification, you'll be automatically signed in.
+                  Enter the 6-digit code from the email, or simply click the verification link inside it.
                 </AlertDescription>
               </Alert>
               
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Didn't receive the email? Check your spam folder.
+                  Didn't receive it? Check your spam folder.
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEmailSent(false);
-                    setMode("login");
-                  }}
-                >
-                  Back to Sign In
-                </Button>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="ghost" onClick={handleResendOtp} disabled={resending}>
+                    {resending ? "Sending…" : "Resend code"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEmailSent(false);
+                      setOtp("");
+                      setMode("login");
+                    }}
+                  >
+                    Back to Sign In
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -191,6 +273,7 @@ export default function Auth() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
