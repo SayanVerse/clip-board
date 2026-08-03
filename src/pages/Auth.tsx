@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+
 
 type AuthMode = "login" | "signup";
 
