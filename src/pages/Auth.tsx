@@ -263,8 +263,9 @@ export default function Auth() {
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button variant="ghost" onClick={handleResendOtp} disabled={resending}>
-                    {resending ? "Sending…" : "Resend code"}
+                    {resending ? "Sending…" : "Resend email"}
                   </Button>
+
                   <Button
                     variant="outline"
                     onClick={() => {
