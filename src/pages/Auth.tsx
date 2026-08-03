@@ -201,11 +201,27 @@ export default function Auth() {
               </motion.div>
               <CardTitle className="text-2xl font-bold">Verify Your Email</CardTitle>
               <CardDescription className="text-base">
-                We've sent a verification code to <strong>{email}</strong>
+                We've sent a verification email to <strong>{email}</strong>
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-6">
+              <Alert className="border-primary/50 bg-primary/5">
+                <AlertCircle className="h-4 w-4 text-primary" />
+                <AlertDescription>
+                  Click the verification link in the email to finish signing up. You'll be signed in automatically.
+                </AlertDescription>
+              </Alert>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or enter a 6-digit code</span>
+                </div>
+              </div>
+
               <div className="flex flex-col items-center gap-4">
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>
@@ -240,12 +256,6 @@ export default function Auth() {
                 </motion.div>
               </div>
 
-              <Alert className="border-primary/50 bg-primary/5">
-                <AlertCircle className="h-4 w-4 text-primary" />
-                <AlertDescription>
-                  Enter the 6-digit code from the email, or simply click the verification link inside it.
-                </AlertDescription>
-              </Alert>
               
               <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
@@ -253,8 +263,9 @@ export default function Auth() {
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button variant="ghost" onClick={handleResendOtp} disabled={resending}>
-                    {resending ? "Sending…" : "Resend code"}
+                    {resending ? "Sending…" : "Resend email"}
                   </Button>
+
                   <Button
                     variant="outline"
                     onClick={() => {
