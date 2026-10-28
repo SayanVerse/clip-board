@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Clipboard, Cloud } from "lucide-react";
+import { Menu, X, Clipboard, Cloud, CircleDashed, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
@@ -20,30 +20,27 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
 
   return (
     <>
-      {/* Mobile Header — liquid glass */}
-      <header className="sticky top-0 z-50 glass-strong border-b border-border/40 md:hidden">
-        <div className="container max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-foreground rounded-full">
-              <Clipboard className="h-4 w-4 text-background" />
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-50 border-b border-border bg-card md:hidden">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+              <Clipboard className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-base tracking-tight text-foreground">SyncHub</span>
+            <span className="font-display text-base font-semibold tracking-tight text-foreground">SyncHub</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            {sessionId && sessionStart && (
-              <SessionTimer startTime={sessionStart} />
-            )}
+            {sessionId && sessionStart && <SessionTimer startTime={sessionStart} />}
             {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-accent rounded-full">
-                <Cloud className="h-3 w-3 text-primary" />
-                <span className="text-xs font-medium text-primary">Synced</span>
+              <div className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1">
+                <Sparkles className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs font-medium text-foreground">Synced</span>
               </div>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -53,7 +50,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -61,40 +58,45 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-foreground/20 md:hidden"
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-40 bg-foreground/10 md:hidden"
               onClick={() => setIsOpen(false)}
             />
-            
+
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="fixed top-14 left-0 right-0 z-50 bg-card border-b border-border shadow-[var(--shadow-3)] md:hidden"
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
+              className="fixed left-0 right-0 top-14 z-50 border-b border-border bg-card shadow-[var(--shadow-3)] md:hidden"
             >
-              <div className="container max-w-6xl mx-auto px-4 py-4">
+              <div className="mx-auto w-full max-w-6xl px-4 py-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm text-muted-foreground">Status</span>
                     <div className="flex items-center gap-2">
                       {sessionId ? (
-                        <span className="text-xs font-medium text-primary">Session Active</span>
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                          <span className="h-2 w-2 rounded-full bg-primary animate-soft-pulse" />
+                          Session active
+                        </span>
                       ) : isLoggedIn ? (
-                        <span className="text-xs font-medium text-primary">Cloud Synced</span>
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                          <Cloud className="h-3 w-3" /> Cloud synced
+                        </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Not Connected</span>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <CircleDashed className="h-3 w-3" /> Not connected
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {!isLoggedIn && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Theme</span>
-                      <ThemeToggle />
-                    </div>
-                  )}
-                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Shortcuts</span>
                     <KeyboardShortcuts />
@@ -107,7 +109,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
                     </div>
                   )}
 
-                  <div className="pt-2 border-t border-border">
+                  <div className="border-t border-border pt-3">
                     <AuthButton />
                   </div>
                 </div>
@@ -116,37 +118,6 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
           </>
         )}
       </AnimatePresence>
-
-      {/* Desktop Header — liquid glass */}
-      <header className="sticky top-0 z-50 glass-strong border-b border-border/40 hidden md:block">
-        <div className="container max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-foreground rounded-full">
-              <Clipboard className="h-5 w-5 text-background" />
-            </div>
-            <span className="font-semibold text-xl tracking-tight text-foreground">SyncHub</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {sessionId && sessionStart && (
-              <SessionTimer startTime={sessionStart} />
-            )}
-            {isLoggedIn && !sessionId && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-accent rounded-full">
-                <Cloud className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-medium text-primary">Synced</span>
-              </div>
-            )}
-            <KeyboardShortcuts />
-            {isLoggedIn && userId ? (
-              <UserSettings userId={userId} />
-            ) : (
-              <ThemeToggle />
-            )}
-            <AuthButton />
-          </div>
-        </div>
-      </header>
     </>
   );
 };

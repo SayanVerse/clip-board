@@ -10,25 +10,25 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "liquid-btn text-foreground hover:text-foreground",
+          "bg-primary text-primary-foreground hover:bg-primary/85 active:bg-primary/75 shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]",
         primary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)]",
+          "bg-primary text-primary-foreground hover:bg-primary/85 active:bg-primary/75 shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]",
         destructive:
-          "liquid-btn text-destructive hover:text-destructive",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[var(--shadow-1)]",
         outline:
-          "liquid-btn border border-border text-foreground",
+          "border border-border bg-card text-foreground hover:bg-accent shadow-[var(--shadow-1)]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         ghost:
-          "text-foreground hover:bg-accent/60 hover:backdrop-blur-md",
+          "text-foreground hover:bg-accent",
         link:
           "text-foreground underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-6 py-2",
+        default: "h-10 px-5 py-2",
         sm: "h-9 px-4 text-xs",
         lg: "h-12 px-8",
-        icon: "h-10 w-10",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
