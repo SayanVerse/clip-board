@@ -132,6 +132,11 @@
     background-attachment: fixed;
   }
 
+  /* Prevent horizontal overflow on small screens without breaking sticky layout */
+  html, body {
+    overflow-x: clip;
+  }
+
   h1, h2, h3, h4, .font-display {
     font-family: 'Sora', 'Manrope', system-ui, sans-serif;
     letter-spacing: -0.02em;

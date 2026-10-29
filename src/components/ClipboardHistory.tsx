@@ -235,7 +235,7 @@ export const ClipboardHistory = ({
   if (isLoading) {
     return <HistorySkeleton />;
   }
-  return <Card className="p-4 md:p-6 h-full">
+  return <Card className="p-4 md:p-6 h-full min-w-0">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="font-medium text-base text-foreground">Clipboard History</h3>
@@ -310,7 +310,7 @@ export const ClipboardHistory = ({
                       
                       {/* Content */}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap min-w-0">
                           <span className="text-[11px] font-medium text-muted-foreground">{item.device_name || "Unknown"}</span>
                           <span className="text-[10px] text-muted-foreground/60">•</span>
                           <span
@@ -422,7 +422,7 @@ export const ClipboardHistory = ({
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         {(item.content_type === "text" || item.content_type === "code") && <Button variant="ghost" size="icon" onClick={() => copyText(item.content!)} className="h-8 w-8 rounded-full hover:bg-primary/10">
                             <Copy className="h-4 w-4" />
                           </Button>}
