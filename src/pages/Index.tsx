@@ -3,6 +3,8 @@ import { SessionManager } from "@/components/SessionManager";
 import { ClipboardInput, ClipboardInputHandle } from "@/components/ClipboardInput";
 import { ClipboardHistory } from "@/components/ClipboardHistory";
 import { MobileNav } from "@/components/MobileNav";
+import { AppSidebar } from "@/components/AppSidebar";
+import { AuthButton } from "@/components/AuthButton";
 import { SessionTimer } from "@/components/SessionTimer";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { AIChatbot } from "@/components/AIChatbot";
