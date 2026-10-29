@@ -108,17 +108,26 @@ const Index = () => {
   const hasActiveSession = isLoggedIn || !!sessionId;
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex w-full relative">
       <AnimatedBackground />
-      
-      <MobileNav 
-        sessionId={sessionId} 
-        sessionStart={sessionStart} 
+
+      <AppSidebar
+        sessionId={sessionId}
+        sessionCode={sessionCode}
+        sessionStart={sessionStart}
         isLoggedIn={isLoggedIn}
         userId={user?.id}
       />
 
-      <main className="flex-1">
+      <div className="flex-1 min-w-0 flex flex-col">
+      <MobileNav
+        sessionId={sessionId}
+        sessionStart={sessionStart}
+        isLoggedIn={isLoggedIn}
+        userId={user?.id}
+      />
+
+      <main className="flex-1 w-full min-w-0 overflow-x-hidden">
         {!hasActiveSession ? (
           <div className="container max-w-5xl mx-auto px-4 py-12 md:py-20">
             <motion.div 
@@ -132,14 +141,14 @@ const Index = () => {
                 <span className="text-sm font-medium">AI-Powered Code Detection</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-5 text-foreground">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-5 text-foreground">
                 Share clipboard
                 <span className="text-primary"> instantly</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
-                {isLoggedIn 
-                  ? "Sign in with Google to sync across all your devices automatically."
-                  : "Sync text, code, and files across all your devices with a simple 4-digit code."}
+                {isLoggedIn
+                  ? "You're signed in — everything you send syncs to all your devices automatically."
+                  : "Sync text, code, and files across all your devices with a 4-digit code, or sign in to auto-sync."}
               </p>
               
               <div className="max-w-md mx-auto">
@@ -151,6 +160,11 @@ const Index = () => {
                     initialCode={urlCode}
                   />
                 </div>
+                {!isLoggedIn && (
+                  <div className="flex justify-center mt-4">
+                    <AuthButton />
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -214,7 +228,7 @@ const Index = () => {
           <div className="container max-w-7xl mx-auto px-4 py-6 lg:py-8">
             {isLoggedIn && !sessionId ? (
               <div className="grid lg:grid-cols-[420px_1fr] gap-6">
-                <div className="space-y-5">
+                <div className="space-y-5 min-w-0">
                   <motion.div 
                     className="bg-card rounded-2xl p-5 border border-border shadow-[var(--shadow-1)]"
                     initial={{ opacity: 0, y: 20 }}
@@ -252,6 +266,7 @@ const Index = () => {
                 </div>
                 
                 <motion.div
+                  className="min-w-0"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.15 }}
@@ -261,7 +276,7 @@ const Index = () => {
               </div>
             ) : (
               <div className="grid lg:grid-cols-[420px_1fr] gap-6">
-                <div className="space-y-5">
+                <div className="space-y-5 min-w-0">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -284,6 +299,7 @@ const Index = () => {
                 </div>
                 
                 <motion.div
+                  className="min-w-0"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.15 }}
@@ -303,6 +319,7 @@ const Index = () => {
           <a href="/contact" className="hover:text-primary transition-colors">Contact Developer</a>
         </div>
       </footer>
+      </div>
 
       {isLoggedIn && <AIChatbot onSendToClipboard={handleSendToClipboardInput} />}
     </div>

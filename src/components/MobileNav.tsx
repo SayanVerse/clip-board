@@ -32,6 +32,7 @@ export const MobileNav = ({ sessionId, sessionStart, isLoggedIn, userId }: Mobil
 
           <div className="flex items-center gap-2">
             {sessionId && sessionStart && <SessionTimer startTime={sessionStart} />}
+            {!sessionId && <AuthButton />}
             {isLoggedIn && !sessionId && (
               <div className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1">
                 <Sparkles className="h-3 w-3 text-muted-foreground" />
