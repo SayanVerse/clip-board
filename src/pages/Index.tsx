@@ -27,6 +27,7 @@ const Index = () => {
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [deviceName] = useState(getDeviceName());
   const [urlCode, setUrlCode] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const clipboardInputRef = useRef<ClipboardInputHandle>(null);
   const { user, loading: authLoading } = useAuth();
@@ -108,7 +109,7 @@ const Index = () => {
   const hasActiveSession = isLoggedIn || !!sessionId;
 
   return (
-    <div className="min-h-screen flex w-full relative">
+    <div className="min-h-screen flex flex-col w-full relative">
       <AnimatedBackground />
 
       <AppSidebar
@@ -117,14 +118,19 @@ const Index = () => {
         sessionStart={sessionStart}
         isLoggedIn={isLoggedIn}
         userId={user?.id}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
       <MobileNav
         sessionId={sessionId}
+        sessionCode={sessionCode}
         sessionStart={sessionStart}
         isLoggedIn={isLoggedIn}
         userId={user?.id}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
       <main className="flex-1 w-full min-w-0 overflow-x-hidden">
